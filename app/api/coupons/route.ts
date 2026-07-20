@@ -57,10 +57,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Generate a unique code (retry a couple of times on the astronomically
-  // unlikely collision).
+  // Generate a unique code, retrying ONLY on the astronomically unlikely code
+  // collision. Any other error (e.g. storage misconfiguration) is surfaced so
+  // it can be diagnosed instead of being silently swallowed.
   let coupon: Coupon | null = null;
-  for (let attempt = 0; attempt < 5 && !coupon; attempt++) {
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
     const candidate: Coupon = {
       code: generateCode(),
       name,
@@ -77,14 +79,21 @@ export async function POST(req: NextRequest) {
     };
     try {
       coupon = await createCoupon(candidate);
-    } catch {
-      coupon = null;
+      break;
+    } catch (err) {
+      lastError = err;
+      const msg = err instanceof Error ? err.message.toLowerCase() : "";
+      if (msg.includes("already exists")) continue; // code collision → retry
+      break; // real error → stop and report it
     }
   }
 
   if (!coupon) {
+    console.error("Failed to create coupon:", lastError);
+    const detail =
+      lastError instanceof Error ? lastError.message : "unknown error";
     return NextResponse.json(
-      { error: "Could not create coupon, please try again" },
+      { error: `Could not create coupon: ${detail}` },
       { status: 500 }
     );
   }

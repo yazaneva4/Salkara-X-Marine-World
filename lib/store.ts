@@ -78,6 +78,13 @@ async function readAll(): Promise<Coupon[]> {
 async function writeAll(coupons: Coupon[]): Promise<void> {
   const json = JSON.stringify(coupons);
   if (!useBlob) {
+    // On Vercel the filesystem is read-only, so local-file mode can't work.
+    // Give a clear, actionable error instead of a cryptic EROFS failure.
+    if (process.env.VERCEL) {
+      throw new Error(
+        "Vercel Blob storage is not connected. Add a Blob store to this project and redeploy (the app needs a token starting with 'vercel_blob_rw_')."
+      );
+    }
     await fs.mkdir(path.dirname(LOCAL_PATH), { recursive: true });
     await fs.writeFile(LOCAL_PATH, json, "utf8");
     return;
