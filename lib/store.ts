@@ -57,7 +57,11 @@ async function readAll(): Promise<Coupon[]> {
     }
   }
 
-  const { blobs } = await list({ prefix: DB_PATHNAME, limit: 1 });
+  const { blobs } = await list({
+    prefix: DB_PATHNAME,
+    limit: 1,
+    token: appConfig.blobToken,
+  });
   if (!blobs.length) return [];
 
   const res = await fetch(`${blobs[0].url}?_=${Date.now()}`, { cache: "no-store" });
@@ -85,6 +89,7 @@ async function writeAll(coupons: Coupon[]): Promise<void> {
     allowOverwrite: true,
     contentType: "application/octet-stream",
     cacheControlMaxAge: 0,
+    token: appConfig.blobToken,
   });
 }
 

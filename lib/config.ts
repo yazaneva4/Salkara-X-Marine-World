@@ -1,6 +1,25 @@
 import type { Role } from "./types";
 
 /**
+ * Resolve the Vercel Blob read-write token.
+ *
+ * Normally it lives in `BLOB_READ_WRITE_TOKEN`, but if the Blob store was
+ * connected with a custom environment-variable prefix, the token ends up under
+ * a different name (e.g. `BLOB_READ_WRITE_TOKEN_READ_WRITE_TOKEN`). Vercel Blob
+ * tokens always start with `vercel_blob_rw_`, so as a fallback we find it by its
+ * value — this makes the app work regardless of the prefix chosen in Vercel.
+ */
+function resolveBlobToken(): string {
+  if (process.env.BLOB_READ_WRITE_TOKEN) return process.env.BLOB_READ_WRITE_TOKEN;
+  for (const value of Object.values(process.env)) {
+    if (typeof value === "string" && value.startsWith("vercel_blob_rw_")) {
+      return value;
+    }
+  }
+  return "";
+}
+
+/**
  * Server-side configuration read from environment variables.
  * Never import this into a client component.
  */
@@ -11,7 +30,7 @@ export const appConfig = {
     process.env.DATA_ENCRYPTION_KEY ||
     process.env.SESSION_SECRET ||
     "dev-insecure-secret-change-me-please-change",
-  blobToken: process.env.BLOB_READ_WRITE_TOKEN || "",
+  blobToken: resolveBlobToken(),
   accounts: {
     salkara: {
       username: process.env.SALKARA_USERNAME || "salkara",
