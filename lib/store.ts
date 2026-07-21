@@ -20,7 +20,79 @@ import type { Coupon } from "./types";
 
 const DB_PATHNAME = "coupons/db.enc";
 const LOCAL_PATH = path.join(process.cwd(), ".data", "coupons.json");
-const useBlob = !!appConfig.blobToken;
+
+/**
+ * Collect every Vercel Blob read-write token present in the environment.
+ *
+ * Vercel Blob tokens always start with "vercel_blob_rw_". A project can end up
+ * with several of them (e.g. a leftover token from a deleted store plus the new
+ * one). We gather them all so the store can pick whichever one still points to a
+ * live store — see resolveWorkingToken(). The canonical BLOB_READ_WRITE_TOKEN,
+ * if present, is tried first.
+ */
+function candidateBlobTokens(): string[] {
+  const tokens = new Set<string>();
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    tokens.add(process.env.BLOB_READ_WRITE_TOKEN);
+  }
+  for (const value of Object.values(process.env)) {
+    if (typeof value === "string" && value.startsWith("vercel_blob_rw_")) {
+      tokens.add(value);
+    }
+  }
+  return [...tokens];
+}
+
+const useBlob = candidateBlobTokens().length > 0;
+
+// Cache the token that actually works so we don't re-probe on every request.
+let workingToken: string | null = null;
+
+/** Errors that mean "this token/store is unusable, try the next token". */
+function isDeadStoreError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message.toLowerCase() : "";
+  return (
+    msg.includes("does not exist") ||
+    msg.includes("not found") ||
+    msg.includes("unauthorized") ||
+    msg.includes("forbidden") ||
+    msg.includes("invalid token") ||
+    msg.includes("no longer exists")
+  );
+}
+
+/**
+ * Find a Blob token whose store still exists by probing each candidate with a
+ * cheap list() call. Skips tokens for deleted stores (the exact "This store does
+ * not exist" failure we hit after a store is recreated).
+ */
+async function resolveWorkingToken(): Promise<string> {
+  if (workingToken) return workingToken;
+
+  const candidates = candidateBlobTokens();
+  if (candidates.length === 0) {
+    throw new Error(
+      "No Vercel Blob token found. Connect a Blob store to this project and redeploy."
+    );
+  }
+
+  let lastError: unknown = null;
+  for (const token of candidates) {
+    try {
+      await list({ prefix: DB_PATHNAME, limit: 1, token });
+      workingToken = token;
+      return token;
+    } catch (err) {
+      lastError = err;
+      if (isDeadStoreError(err)) continue; // stale/dead token — try the next one
+      throw err; // a different failure (e.g. network) — surface it
+    }
+  }
+
+  throw new Error(
+    "No connected Vercel Blob store is reachable — every token in the environment points to a deleted store. Connect the current Blob store to this project (and remove old ones), then redeploy."
+  );
+}
 
 function encryptionKey(): Buffer {
   return crypto
@@ -57,11 +129,8 @@ async function readAll(): Promise<Coupon[]> {
     }
   }
 
-  const { blobs } = await list({
-    prefix: DB_PATHNAME,
-    limit: 1,
-    token: appConfig.blobToken,
-  });
+  const token = await resolveWorkingToken();
+  const { blobs } = await list({ prefix: DB_PATHNAME, limit: 1, token });
   if (!blobs.length) return [];
 
   const res = await fetch(`${blobs[0].url}?_=${Date.now()}`, { cache: "no-store" });
@@ -90,13 +159,14 @@ async function writeAll(coupons: Coupon[]): Promise<void> {
     return;
   }
 
+  const token = await resolveWorkingToken();
   await put(DB_PATHNAME, encrypt(json), {
     access: "public",
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: "application/octet-stream",
     cacheControlMaxAge: 0,
-    token: appConfig.blobToken,
+    token,
   });
 }
 
