@@ -81,7 +81,7 @@ export default async function CouponPage({
           couponUrl={url}
         />
 
-        <div className="mt-6">
+        <div className="mt-6 no-print">
           <CouponActions
             code={coupon.code}
             name={coupon.name}

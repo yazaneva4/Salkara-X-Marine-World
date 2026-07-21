@@ -32,15 +32,31 @@
   animation: stampIn 0.45s ease-out both;
 }
 
-/* Print: show only the coupon card, edge to edge */
+/* Print: show only the coupon card, on a single page */
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
 @media print {
+  html,
   body {
     background: #ffffff !important;
+    height: auto !important;
   }
   .no-print {
     display: none !important;
   }
   .print-area {
     box-shadow: none !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Preserve the coupon's colours when printing */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
