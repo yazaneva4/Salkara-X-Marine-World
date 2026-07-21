@@ -15,32 +15,32 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-marine-navy via-marine-dark to-marine-navy text-white">
-      <div className="mx-auto max-w-5xl px-4 py-10 sm:py-16">
+      <div className="relative overflow-hidden">
+        <div className="warm-glow pointer-events-none absolute inset-y-0 left-0 w-1/2" />
+        <div className="ocean-glow pointer-events-none absolute inset-y-0 right-0 w-1/2" />
+
+        <div className="relative mx-auto max-w-5xl px-4 py-10 sm:py-16">
         <div className="text-center">
           <div className="mb-5 flex items-center justify-center gap-4">
-            <div className="grid place-items-center rounded-xl bg-white p-2 shadow-lg">
-              <LogoImg
-                src="/logos/salkara.png"
-                alt="Salkara Family Restaurant"
-                className="h-14 w-auto object-contain sm:h-16"
-                fallback={
-                  <span className="px-2 text-sm font-extrabold text-salkara">Salkara</span>
-                }
-              />
-            </div>
+            <LogoImg
+              src="/logos/salkara.png"
+              alt="Salkara Family Restaurant"
+              className="h-14 w-auto object-contain drop-shadow-md sm:h-16"
+              fallback={
+                <span className="px-2 text-sm font-extrabold text-salkara">Salkara</span>
+              }
+            />
             <span className="text-lg font-bold text-white/60">×</span>
-            <div className="grid place-items-center rounded-xl bg-black p-2 shadow-lg">
-              <LogoImg
-                src="/logos/marine.png"
-                alt="CISO Marine World"
-                className="h-14 w-auto object-contain sm:h-16"
-                fallback={
-                  <span className="px-2 text-sm font-extrabold text-white">
-                    Marine World
-                  </span>
-                }
-              />
-            </div>
+            <LogoImg
+              src="/logos/marine.png"
+              alt="CISO Marine World"
+              className="h-14 w-auto object-contain drop-shadow-md sm:h-16"
+              fallback={
+                <span className="px-2 text-sm font-extrabold text-white">
+                  Marine World
+                </span>
+              }
+            />
           </div>
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-sky-200">
             Salkara Group of Restaurants × CISO Marine World
@@ -62,7 +62,7 @@ export default async function Home() {
         <div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-2">
           <Link
             href={session?.role === "salkara" ? "/salkara" : "/login?role=salkara"}
-            className="group rounded-2xl bg-salkara p-6 shadow-xl ring-1 ring-white/10 transition-transform hover:-translate-y-1"
+            className="ticket-frame group rounded-2xl bg-salkara p-6 shadow-xl transition-transform hover:-translate-y-1"
           >
             <div className="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-white/15">
               <ForkKnifeIcon className="h-6 w-6" />
@@ -78,7 +78,7 @@ export default async function Home() {
 
           <Link
             href={session?.role === "marine" ? "/marine" : "/login?role=marine"}
-            className="group rounded-2xl bg-marine p-6 shadow-xl ring-1 ring-white/10 transition-transform hover:-translate-y-1"
+            className="ticket-frame group rounded-2xl bg-marine p-6 shadow-xl transition-transform hover:-translate-y-1"
           >
             <div className="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-white/15">
               <FishIcon className="h-6 w-6" />
@@ -153,6 +153,7 @@ export default async function Home() {
         <p className="mt-12 text-center font-script text-2xl text-gold">
           Taste the Best, Discover the Ocean
         </p>
+        </div>
       </div>
     </main>
   );

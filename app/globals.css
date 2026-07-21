@@ -32,6 +32,61 @@
   animation: stampIn 0.45s ease-out both;
 }
 
+/* ------------------------------------------------------------------ */
+/* "Ticket" motif shared by the coupon card and other cards on the site */
+/* ------------------------------------------------------------------ */
+
+/* Dashed perforated border, like a torn ticket stub edge. */
+.ticket-frame {
+  border: 2px dashed rgba(255, 255, 255, 0.55);
+}
+
+/* Dashed divider that mimics the perforation line on a ticket stub, with a
+   punched "hole" at each end matching the surrounding background colour. */
+.ticket-divider {
+  position: relative;
+  border-top: 2px dashed rgba(255, 255, 255, 0.25);
+}
+
+.ticket-divider::before,
+.ticket-divider::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  /* Override with an inline style (--ticket-punch-bg) to match whatever
+     surface the divider sits on. Defaults to the coupon's navy background. */
+  background: var(--ticket-punch-bg, #0a2b4e);
+}
+
+.ticket-divider::before {
+  left: -7px;
+}
+
+.ticket-divider::after {
+  right: -7px;
+}
+
+/* Soft warm (food) and cool (ocean) accent glows used behind headers to
+   evoke the restaurant / marine-world imagery without literal photos. */
+.warm-glow {
+  background: radial-gradient(
+    circle at 20% 20%,
+    rgba(200, 60, 45, 0.28),
+    transparent 60%
+  );
+}
+
+.ocean-glow {
+  background: radial-gradient(
+    circle at 80% 25%,
+    rgba(20, 120, 190, 0.35),
+    transparent 60%
+  );
+}
+
 /* Print: show only the coupon card, on a single page */
 @page {
   size: A4 portrait;

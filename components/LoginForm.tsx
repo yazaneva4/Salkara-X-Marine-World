@@ -44,7 +44,8 @@ export default function LoginForm() {
 
   return (
     <div className="mx-auto w-full max-w-md">
-      <div className="overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-200">
+      <div className="h-1.5 rounded-t-2xl bg-gradient-to-r from-salkara via-gold to-marine" />
+      <div className="overflow-hidden rounded-b-2xl bg-white shadow-xl ring-1 ring-slate-200">
         {/* Role tabs */}
         <div className="grid grid-cols-2">
           <button

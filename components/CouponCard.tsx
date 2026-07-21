@@ -19,8 +19,8 @@ function SalkaraWordmark() {
 
 function MarineWordmark() {
   return (
-    <div className="px-2 py-1 text-center leading-none text-white">
-      <div className="text-[8px] font-semibold uppercase tracking-widest text-sky-300">CISO</div>
+    <div className="px-2 py-1 text-center leading-none text-marine-navy">
+      <div className="text-[8px] font-semibold uppercase tracking-widest text-marine">CISO</div>
       <div className="mt-0.5 text-lg font-extrabold tracking-tight">Marine World</div>
     </div>
   );
@@ -58,33 +58,30 @@ export default function CouponCard({
   const completed = status === "completed";
 
   return (
-    <div className="print-area mx-auto w-full max-w-2xl overflow-hidden rounded-2xl bg-marine-navy text-white shadow-2xl ring-1 ring-black/20">
+    <div className="print-area ticket-frame mx-auto w-full max-w-2xl rounded-[28px] bg-slate-100 p-2 shadow-2xl sm:p-3">
+    <div className="overflow-hidden rounded-2xl bg-marine-navy text-white ring-1 ring-black/20">
       {/* Top logo panel */}
-      <div className="relative bg-gradient-to-b from-cream to-white px-5 pb-4 pt-5 text-marine-navy">
-        <div className="flex items-center justify-center gap-3 sm:gap-5">
+      <div className="relative overflow-hidden bg-gradient-to-b from-cream to-white px-5 pb-4 pt-5 text-marine-navy">
+        <div className="warm-glow pointer-events-none absolute inset-y-0 left-0 w-2/3" />
+        <div className="ocean-glow pointer-events-none absolute inset-y-0 right-0 w-2/3" />
+        <div className="relative flex items-center justify-center gap-4 sm:gap-6">
           {/* Salkara logo */}
-          <div className="grid place-items-center rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-black/5">
-            <LogoImg
-              src="/logos/salkara.png"
-              alt="Salkara Family Restaurant"
-              className="h-16 w-auto object-contain sm:h-20"
-              fallback={<SalkaraWordmark />}
-            />
-          </div>
+          <LogoImg
+            src="/logos/salkara.png"
+            alt="Salkara Family Restaurant"
+            className="h-16 w-auto object-contain drop-shadow-sm sm:h-20"
+            fallback={<SalkaraWordmark />}
+          />
 
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-marine-navy text-sm font-bold text-white">
-            ×
-          </div>
+          <span className="shrink-0 text-lg font-bold text-marine-navy/40">×</span>
 
           {/* Marine World logo */}
-          <div className="grid place-items-center rounded-xl bg-black p-1.5 shadow-sm ring-1 ring-white/10">
-            <LogoImg
-              src="/logos/marine.png"
-              alt="CISO Marine World"
-              className="h-16 w-auto object-contain sm:h-20"
-              fallback={<MarineWordmark />}
-            />
-          </div>
+          <LogoImg
+            src="/logos/marine.png"
+            alt="CISO Marine World"
+            className="h-16 w-auto object-contain drop-shadow-sm sm:h-20"
+            fallback={<MarineWordmark />}
+          />
         </div>
       </div>
 
@@ -173,7 +170,7 @@ export default function CouponCard({
       </div>
 
       {/* Customer + QR + stamp */}
-      <div className="grid grid-cols-1 gap-4 bg-marine-dark px-5 py-4 sm:grid-cols-[auto,1fr,auto] sm:items-center">
+      <div className="ticket-divider grid grid-cols-1 gap-4 bg-marine-dark px-5 py-5 sm:grid-cols-[auto,1fr,auto] sm:items-center">
         <div className="flex items-center justify-center">
           <div className="rounded-lg bg-white p-2">
             <QRCodeSVG value={couponUrl} size={92} level="M" includeMargin={false} />
@@ -237,7 +234,11 @@ export default function CouponCard({
         <div className="mt-2 text-center font-script text-lg text-gold">
           Taste the Best, Discover the Ocean
         </div>
+        <div className="mt-1 text-center text-[8px] font-semibold uppercase tracking-widest text-sky-200/50">
+          Salkara Group of Restaurants ★ CISO Marine World
+        </div>
       </div>
+    </div>
     </div>
   );
 }

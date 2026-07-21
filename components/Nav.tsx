@@ -32,23 +32,19 @@ export default function Nav({ role, username }: { role: Role; username: string }
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5">
-            <span className="grid h-8 w-8 place-items-center rounded-md bg-white p-0.5 ring-1 ring-slate-200">
-              <LogoImg
-                src="/logos/salkara.png"
-                alt="Salkara"
-                className="h-full w-full object-contain"
-                fallback={<BadgeFallback />}
-              />
-            </span>
-            <span className="grid h-8 w-8 place-items-center rounded-md bg-black p-0.5">
-              <LogoImg
-                src="/logos/marine.png"
-                alt="CISO Marine World"
-                className="h-full w-full object-contain"
-                fallback={<span className="h-full w-full" />}
-              />
-            </span>
+          <span className="flex items-center gap-2">
+            <LogoImg
+              src="/logos/salkara.png"
+              alt="Salkara"
+              className="h-8 w-auto rounded-sm object-contain"
+              fallback={<BadgeFallback />}
+            />
+            <LogoImg
+              src="/logos/marine.png"
+              alt="CISO Marine World"
+              className="h-8 w-auto rounded-sm object-contain"
+              fallback={<span />}
+            />
           </span>
           <span className="hidden text-sm font-bold text-slate-700 sm:inline">
             Salkara × Marine World
