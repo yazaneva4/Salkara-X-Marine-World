@@ -1,5 +1,6 @@
 import Link from "next/link";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import LogoImg from "@/components/LogoImg";
 import { ForkKnifeIcon, FishIcon } from "@/components/Icons";
 import { getServerSession } from "@/lib/auth";
 import { contactSalkaraMessage, contactMarineMessage } from "@/lib/whatsapp";
@@ -16,6 +17,31 @@ export default async function Home() {
     <main className="min-h-screen bg-gradient-to-b from-marine-navy via-marine-dark to-marine-navy text-white">
       <div className="mx-auto max-w-5xl px-4 py-10 sm:py-16">
         <div className="text-center">
+          <div className="mb-5 flex items-center justify-center gap-4">
+            <div className="grid place-items-center rounded-xl bg-white p-2 shadow-lg">
+              <LogoImg
+                src="/logos/salkara.png"
+                alt="Salkara Family Restaurant"
+                className="h-14 w-auto object-contain sm:h-16"
+                fallback={
+                  <span className="px-2 text-sm font-extrabold text-salkara">Salkara</span>
+                }
+              />
+            </div>
+            <span className="text-lg font-bold text-white/60">×</span>
+            <div className="grid place-items-center rounded-xl bg-black p-2 shadow-lg">
+              <LogoImg
+                src="/logos/marine.png"
+                alt="CISO Marine World"
+                className="h-14 w-auto object-contain sm:h-16"
+                fallback={
+                  <span className="px-2 text-sm font-extrabold text-white">
+                    Marine World
+                  </span>
+                }
+              />
+            </div>
+          </div>
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-sky-200">
             Salkara Group of Restaurants × CISO Marine World
           </div>
