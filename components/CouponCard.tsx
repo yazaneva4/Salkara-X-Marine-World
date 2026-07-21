@@ -65,23 +65,29 @@ export default function CouponCard({
         <div className="warm-glow pointer-events-none absolute inset-y-0 left-0 w-2/3" />
         <div className="ocean-glow pointer-events-none absolute inset-y-0 right-0 w-2/3" />
         <div className="relative flex items-center justify-center gap-4 sm:gap-6">
-          {/* Salkara logo */}
+          {/* Salkara logo — mix-blend-multiply drops its white background so it
+              floats on the header instead of showing a white box */}
           <LogoImg
             src="/logos/salkara.png"
             alt="Salkara Family Restaurant"
-            className="h-16 w-auto object-contain drop-shadow-sm sm:h-20"
+            className="h-16 w-auto object-contain mix-blend-multiply sm:h-20"
             fallback={<SalkaraWordmark />}
           />
 
           <span className="shrink-0 text-lg font-bold text-marine-navy/40">×</span>
 
-          {/* Marine World logo */}
-          <LogoImg
-            src="/logos/marine.png"
-            alt="CISO Marine World"
-            className="h-16 w-auto object-contain drop-shadow-sm sm:h-20"
-            fallback={<MarineWordmark />}
-          />
+          {/* Marine World logo — its source file has an opaque black
+              background, so it's presented as a soft rounded badge with a
+              blurred glow instead of a hard-edged rectangle */}
+          <div className="relative">
+            <div className="absolute -inset-2 rounded-2xl bg-marine-navy/60 blur-lg" />
+            <LogoImg
+              src="/logos/marine.png"
+              alt="CISO Marine World"
+              className="relative h-16 w-auto rounded-xl object-contain shadow-md sm:h-20"
+              fallback={<MarineWordmark />}
+            />
+          </div>
         </div>
       </div>
 

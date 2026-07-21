@@ -36,13 +36,13 @@ export default function Nav({ role, username }: { role: Role; username: string }
             <LogoImg
               src="/logos/salkara.png"
               alt="Salkara"
-              className="h-8 w-auto rounded-sm object-contain"
+              className="h-8 w-auto object-contain mix-blend-multiply"
               fallback={<BadgeFallback />}
             />
             <LogoImg
               src="/logos/marine.png"
               alt="CISO Marine World"
-              className="h-8 w-auto rounded-sm object-contain"
+              className="h-8 w-auto rounded-md object-contain shadow-sm"
               fallback={<span />}
             />
           </span>

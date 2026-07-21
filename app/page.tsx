@@ -21,22 +21,22 @@ export default async function Home() {
 
         <div className="relative mx-auto max-w-5xl px-4 py-10 sm:py-16">
         <div className="text-center">
-          <div className="mb-5 flex items-center justify-center gap-4">
+          <div className="mb-5 flex w-fit items-center justify-center gap-4 rounded-2xl bg-gradient-to-b from-cream to-white px-6 py-3 shadow-lg mx-auto">
             <LogoImg
               src="/logos/salkara.png"
               alt="Salkara Family Restaurant"
-              className="h-14 w-auto object-contain drop-shadow-md sm:h-16"
+              className="h-14 w-auto object-contain mix-blend-multiply sm:h-16"
               fallback={
                 <span className="px-2 text-sm font-extrabold text-salkara">Salkara</span>
               }
             />
-            <span className="text-lg font-bold text-white/60">×</span>
+            <span className="text-lg font-bold text-marine-navy/40">×</span>
             <LogoImg
               src="/logos/marine.png"
               alt="CISO Marine World"
-              className="h-14 w-auto object-contain drop-shadow-md sm:h-16"
+              className="h-14 w-auto rounded-lg object-contain shadow-md sm:h-16"
               fallback={
-                <span className="px-2 text-sm font-extrabold text-white">
+                <span className="px-2 text-sm font-extrabold text-marine-navy">
                   Marine World
                 </span>
               }
