@@ -2,7 +2,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { list, put } from "@vercel/blob";
+import { get, list, put } from "@vercel/blob";
 import { appConfig } from "./config";
 import type { Coupon } from "./types";
 
@@ -94,6 +94,36 @@ async function resolveWorkingToken(): Promise<string> {
   );
 }
 
+type BlobAccess = "public" | "private";
+
+// A Blob store is configured as either "public" or "private", and reads/writes
+// must use the matching access mode. We don't know which it is up front, so we
+// try one, and on the specific "wrong access mode" error we flip and remember
+// the correct one for the life of this serverless instance.
+let cachedAccess: BlobAccess | null = null;
+
+function accessOrder(): BlobAccess[] {
+  if (cachedAccess) return [cachedAccess];
+  const forced = process.env.BLOB_ACCESS;
+  if (forced === "public" || forced === "private") return [forced];
+  // Newer Blob stores default to private, so try that first.
+  return ["private", "public"];
+}
+
+function isAccessMismatch(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message.toLowerCase() : "";
+  return (
+    msg.includes("public access on a private store") ||
+    msg.includes("private access on a public store") ||
+    (msg.includes("access") && msg.includes("store") && msg.includes("configured"))
+  );
+}
+
+function isNotFound(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message.toLowerCase() : "";
+  return msg.includes("not found") || msg.includes("does not exist");
+}
+
 function encryptionKey(): Buffer {
   return crypto
     .createHash("sha256")
@@ -130,18 +160,30 @@ async function readAll(): Promise<Coupon[]> {
   }
 
   const token = await resolveWorkingToken();
-  const { blobs } = await list({ prefix: DB_PATHNAME, limit: 1, token });
-  if (!blobs.length) return [];
 
-  const res = await fetch(`${blobs[0].url}?_=${Date.now()}`, { cache: "no-store" });
-  if (!res.ok) return [];
-
-  const buf = Buffer.from(await res.arrayBuffer());
-  try {
-    return JSON.parse(decrypt(buf)) as Coupon[];
-  } catch {
-    return [];
+  // Read the encrypted blob directly with get() — works for both public and
+  // private stores. useCache:false reads the latest content (read-after-write
+  // consistency). Tries each access mode until the store's mode matches.
+  let lastError: unknown = null;
+  for (const access of accessOrder()) {
+    try {
+      const result = await get(DB_PATHNAME, { access, token, useCache: false });
+      cachedAccess = access;
+      if (!result || !result.stream) return [];
+      const buf = Buffer.from(await new Response(result.stream).arrayBuffer());
+      try {
+        return JSON.parse(decrypt(buf)) as Coupon[];
+      } catch {
+        return [];
+      }
+    } catch (err) {
+      lastError = err;
+      if (isAccessMismatch(err)) continue; // wrong access mode — try the other
+      if (isNotFound(err)) return []; // no data yet
+      throw err;
+    }
   }
+  throw lastError;
 }
 
 async function writeAll(coupons: Coupon[]): Promise<void> {
@@ -160,14 +202,30 @@ async function writeAll(coupons: Coupon[]): Promise<void> {
   }
 
   const token = await resolveWorkingToken();
-  await put(DB_PATHNAME, encrypt(json), {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/octet-stream",
-    cacheControlMaxAge: 0,
-    token,
-  });
+  const body = encrypt(json);
+
+  // Write with the store's access mode, adapting automatically if we guessed
+  // wrong (public vs private) and caching the correct mode afterwards.
+  let lastError: unknown = null;
+  for (const access of accessOrder()) {
+    try {
+      await put(DB_PATHNAME, body, {
+        access,
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: "application/octet-stream",
+        cacheControlMaxAge: 0,
+        token,
+      });
+      cachedAccess = access;
+      return;
+    } catch (err) {
+      lastError = err;
+      if (isAccessMismatch(err)) continue; // wrong access mode — try the other
+      throw err;
+    }
+  }
+  throw lastError;
 }
 
 export async function listCoupons(): Promise<Coupon[]> {
