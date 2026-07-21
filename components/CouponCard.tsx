@@ -2,8 +2,29 @@
 
 import React from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { ForkKnifeIcon, TicketIcon, FishIcon, CalendarIcon, UsersIcon } from "./Icons";
+import { ForkKnifeIcon, TicketIcon, CalendarIcon, UsersIcon } from "./Icons";
+import LogoImg from "./LogoImg";
 import type { CouponStatus } from "@/lib/types";
+
+function SalkaraWordmark() {
+  return (
+    <div className="px-2 py-1 text-center leading-none">
+      <div className="text-xl font-extrabold tracking-tight text-salkara">Salkara</div>
+      <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-widest text-slate-500">
+        Family Restaurant
+      </div>
+    </div>
+  );
+}
+
+function MarineWordmark() {
+  return (
+    <div className="px-2 py-1 text-center leading-none text-white">
+      <div className="text-[8px] font-semibold uppercase tracking-widest text-sky-300">CISO</div>
+      <div className="mt-0.5 text-lg font-extrabold tracking-tight">Marine World</div>
+    </div>
+  );
+}
 
 interface Props {
   code: string;
@@ -40,42 +61,29 @@ export default function CouponCard({
     <div className="print-area mx-auto w-full max-w-2xl overflow-hidden rounded-2xl bg-marine-navy text-white shadow-2xl ring-1 ring-black/20">
       {/* Top logo panel */}
       <div className="relative bg-gradient-to-b from-cream to-white px-5 pb-4 pt-5 text-marine-navy">
-        <div className="flex items-center justify-center gap-4">
-          {/* Salkara mark */}
-          <div className="text-right leading-tight">
-            <div className="flex items-center justify-end gap-2">
-              <span className="text-2xl font-extrabold tracking-tight text-salkara">
-                Salkara
-              </span>
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-salkara text-white">
-                <ForkKnifeIcon className="h-5 w-5" />
-              </span>
-            </div>
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-600">
-              Group of Restaurants
-            </div>
-            <div className="text-[9px] font-medium uppercase tracking-widest text-slate-400">
-              Saudi Arabia
-            </div>
+        <div className="flex items-center justify-center gap-3 sm:gap-5">
+          {/* Salkara logo */}
+          <div className="grid place-items-center rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-black/5">
+            <LogoImg
+              src="/logos/salkara.png"
+              alt="Salkara Family Restaurant"
+              className="h-16 w-auto object-contain sm:h-20"
+              fallback={<SalkaraWordmark />}
+            />
           </div>
 
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-marine-navy text-sm font-bold text-white">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-marine-navy text-sm font-bold text-white">
             ×
           </div>
 
-          {/* Marine World mark */}
-          <div className="leading-tight">
-            <div className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-marine text-white">
-                <FishIcon className="h-5 w-5" />
-              </span>
-              <span className="text-2xl font-extrabold tracking-tight text-marine">
-                Marine World
-              </span>
-            </div>
-            <div className="pl-11 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-              CISO
-            </div>
+          {/* Marine World logo */}
+          <div className="grid place-items-center rounded-xl bg-black p-1.5 shadow-sm ring-1 ring-white/10">
+            <LogoImg
+              src="/logos/marine.png"
+              alt="CISO Marine World"
+              className="h-16 w-auto object-contain sm:h-20"
+              fallback={<MarineWordmark />}
+            />
           </div>
         </div>
       </div>
