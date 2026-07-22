@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import {
   ForkKnifeIcon,
@@ -11,6 +11,42 @@ import {
 } from "./Icons";
 import LogoImg from "./LogoImg";
 import type { CouponStatus } from "@/lib/types";
+
+// If a poster artwork is uploaded to /public as coupon-template.(png|jpg|…),
+// the coupon renders that exact image instead of the coded recreation below,
+// giving a pixel-perfect match to the printed design.
+const TEMPLATE_CANDIDATES = [
+  "/coupon-template.png",
+  "/coupon-template.jpg",
+  "/coupon-template.jpeg",
+  "/coupon-template.webp",
+];
+
+/** Resolve the first coupon-template image that actually loads (or null). */
+function useCouponTemplate(): string | null | undefined {
+  const [src, setSrc] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let active = true;
+    let i = 0;
+    const tryNext = () => {
+      if (!active) return;
+      if (i >= TEMPLATE_CANDIDATES.length) {
+        setSrc(null);
+        return;
+      }
+      const candidate = TEMPLATE_CANDIDATES[i++];
+      const img = new window.Image();
+      img.onload = () => active && setSrc(candidate);
+      img.onerror = () => tryNext();
+      img.src = candidate;
+    };
+    tryNext();
+    return () => {
+      active = false;
+    };
+  }, []);
+  return src;
+}
 
 // Google Maps search links (by business name) so the "Location" QR codes are
 // functional even without exact coordinates on file. Swap these for precise
@@ -88,6 +124,21 @@ export default function CouponCard({
 }: Props) {
   const marineUsed = status === "marine_used" || status === "completed";
   const completed = status === "completed";
+  const templateSrc = useCouponTemplate();
+
+  // When the poster artwork is uploaded, show it exactly as designed.
+  if (templateSrc) {
+    return (
+      <div className="print-area mx-auto w-full max-w-3xl">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={templateSrc}
+          alt="Salkara x CISO Marine World — Joint Holiday Discount Coupon"
+          className="h-auto w-full rounded-xl shadow-2xl"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="print-area mx-auto w-full max-w-2xl rounded-[28px] bg-white p-2 shadow-2xl sm:p-3">
