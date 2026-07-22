@@ -50,6 +50,14 @@ export function UsersIcon(props: IconProps) {
   );
 }
 
+export function StampIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M12 3a3.5 3.5 0 00-3.5 3.5c0 1.2.6 2.2 1.3 3.1.4.5.2 1.4-.5 1.6L6 12.3A3 3 0 004 15.1V17h16v-1.9a3 3 0 00-2-2.8l-3.3-1.1c-.7-.2-.9-1.1-.5-1.6.7-.9 1.3-1.9 1.3-3.1A3.5 3.5 0 0012 3zM4 19h16v2H4v-2z" />
+    </svg>
+  );
+}
+
 export function CheckIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
