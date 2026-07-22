@@ -35,6 +35,32 @@ interface Props {
   couponUrl: string;
 }
 
+// Google Maps search links (by business name) so the "Location" QR codes are
+// functional even without exact coordinates on file. Swap these for precise
+// Google Maps place links once available.
+const SALKARA_MAPS_URL =
+  "https://www.google.com/maps/search/?api=1&query=Salkara+Group+of+Restaurants+Saudi+Arabia";
+const MARINE_MAPS_URL =
+  "https://www.google.com/maps/search/?api=1&query=CISO+Marine+World+Saudi+Arabia";
+
+function LocationQr({ label, url }: { label: string; url: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex flex-col items-center gap-1"
+    >
+      <div className="rounded-md bg-white p-1">
+        <QRCodeSVG value={url} size={44} level="L" includeMargin={false} />
+      </div>
+      <span className="text-center text-[7px] font-semibold uppercase leading-none tracking-wider text-white/50">
+        {label}
+      </span>
+    </a>
+  );
+}
+
 function formatDate(d: string): string {
   if (!d) return "—";
   const parsed = new Date(d);
@@ -175,12 +201,12 @@ export default function CouponCard({
         </div>
       </div>
 
-      {/* Customer + QR + stamp */}
-      <div className="ticket-divider grid grid-cols-1 gap-4 bg-marine-dark px-5 py-5 sm:grid-cols-[auto,1fr,auto] sm:items-center">
-        <div className="flex items-center justify-center">
-          <div className="rounded-lg bg-white p-2">
-            <QRCodeSVG value={couponUrl} size={92} level="M" includeMargin={false} />
-          </div>
+      {/* Locations + Customer + stamp + QR */}
+      <div className="ticket-divider grid grid-cols-1 gap-4 bg-marine-dark px-5 py-5 sm:grid-cols-[auto,1fr,auto,auto] sm:items-center">
+        {/* Location QR codes */}
+        <div className="flex items-center justify-center gap-3">
+          <LocationQr label="Salkara" url={SALKARA_MAPS_URL} />
+          <LocationQr label="Marine World" url={MARINE_MAPS_URL} />
         </div>
 
         <div className="text-center sm:text-left">
@@ -215,6 +241,16 @@ export default function CouponCard({
               Here
             </span>
           )}
+        </div>
+
+        {/* Coupon verification QR */}
+        <div className="flex flex-col items-center gap-1">
+          <div className="rounded-lg bg-white p-2">
+            <QRCodeSVG value={couponUrl} size={92} level="M" includeMargin={false} />
+          </div>
+          <span className="text-center text-[7px] font-semibold uppercase leading-none tracking-wider text-white/50">
+            Scan to view coupon
+          </span>
         </div>
       </div>
 
