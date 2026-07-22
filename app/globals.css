@@ -41,6 +41,32 @@
   border: 2px dashed rgba(255, 255, 255, 0.55);
 }
 
+/* Two small hanging "tag" tabs at the top edge of the coupon, like a ticket
+   stub cut. Coupon-specific (not the generic .ticket-frame) because the tab
+   colour is matched to the coupon's own navy body. */
+.coupon-frame {
+  position: relative;
+}
+
+.coupon-frame::before,
+.coupon-frame::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: 28px;
+  height: 16px;
+  background: #0a2b4e;
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
+}
+
+.coupon-frame::before {
+  left: 16%;
+}
+
+.coupon-frame::after {
+  right: 16%;
+}
+
 /* Dashed divider that mimics the perforation line on a ticket stub, with a
    punched "hole" at each end matching the surrounding background colour. */
 .ticket-divider {

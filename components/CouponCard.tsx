@@ -58,7 +58,7 @@ export default function CouponCard({
   const completed = status === "completed";
 
   return (
-    <div className="print-area ticket-frame mx-auto w-full max-w-2xl rounded-[28px] bg-slate-100 p-2 shadow-2xl sm:p-3">
+    <div className="print-area ticket-frame coupon-frame mx-auto w-full max-w-2xl rounded-[28px] bg-slate-100 p-2 shadow-2xl sm:p-3">
     <div className="overflow-hidden rounded-2xl bg-marine-navy text-white ring-1 ring-black/20">
       {/* Top logo panel */}
       <div className="relative overflow-hidden bg-gradient-to-b from-cream to-white px-5 pb-4 pt-5 text-marine-navy">
