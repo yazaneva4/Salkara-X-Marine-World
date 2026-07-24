@@ -158,13 +158,43 @@ export default function CouponCard({
   // image so it scales with the poster on any screen and in print.
   if (templateSrc) {
     return (
-      <div className="print-area relative mx-auto w-full max-w-3xl">
+      <div
+        className="print-area relative mx-auto w-full max-w-3xl"
+        style={{ containerType: "inline-size" }}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={templateSrc}
           alt="Salkara x CISO Marine World — Joint Holiday Discount Coupon"
           className="h-auto w-full rounded-xl shadow-2xl"
         />
+
+        {/* Coupon code, printed into the blank code box */}
+        <div
+          className="pointer-events-none absolute flex items-center justify-center text-center"
+          style={{ left: "38%", top: "65%", width: "24%", height: "5.5%" }}
+        >
+          <span
+            className="font-mono font-extrabold uppercase leading-none text-marine-navy"
+            style={{ fontSize: "2.55cqw", letterSpacing: "-0.03em" }}
+          >
+            {code}
+          </span>
+        </div>
+
+        {/* Valid-until date, printed under "OFFER VALID UNTIL:" */}
+        <div
+          className="pointer-events-none absolute text-center"
+          style={{ left: "71.5%", top: "65.2%", width: "22.5%" }}
+        >
+          <span
+            className="font-extrabold leading-none text-marine-navy"
+            style={{ fontSize: "1.9cqw" }}
+          >
+            {formatDate(validUntil)}
+          </span>
+        </div>
+
         {marineUsed && (
           <div
             className="pointer-events-none absolute"
