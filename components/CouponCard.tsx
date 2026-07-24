@@ -114,14 +114,16 @@ function MarineStamp({ date }: { date?: string | null }) {
       style={{ transform: "rotate(-13deg)", boxShadow: "0 0 0 2px rgba(14,111,184,0.25) inset" }}
     >
       <div className="text-center leading-none">
-        <div className="text-[9px] font-black uppercase tracking-tight sm:text-[11px]">
+        <div className="text-[6px] font-black uppercase tracking-tight sm:text-[8px]">
           Redeemed
         </div>
-        <div className="text-[6px] font-bold uppercase tracking-wider sm:text-[8px]">
-          CISO Marine World
+        <div className="mt-px text-[4px] font-bold uppercase leading-tight tracking-wider sm:text-[5.5px]">
+          CISO Marine
+          <br />
+          World
         </div>
         {when && (
-          <div className="mt-0.5 text-[5px] font-semibold sm:text-[7px]">{when}</div>
+          <div className="mt-px text-[4px] font-semibold sm:text-[5px]">{when}</div>
         )}
       </div>
     </div>
@@ -157,48 +159,66 @@ export default function CouponCard({
   // "STAMP HERE" box. The box position is expressed as a percentage of the
   // image so it scales with the poster on any screen and in print.
   if (templateSrc) {
+    // Pixel coordinates in the poster's own natural size (1416 x 1111), so
+    // the overlay lines up exactly regardless of screen size or browser —
+    // an SVG viewBox scales uniformly with no dependency on any particular
+    // CSS unit support (unlike e.g. container query units, which not every
+    // mobile browser handles).
+    const VB_W = 1416;
+    const VB_H = 1111;
+    const codeCenterX = VB_W * 0.495; // code box spans ~38%–61%
+    const codeCenterY = VB_H * 0.66; // vertical middle of the code box
+    const dateCenterX = VB_W * 0.79; // date box spans ~66%–92%
+    const dateCenterY = VB_H * 0.675; // just below the "OFFER VALID UNTIL:" label
+
     return (
-      <div
-        className="print-area relative mx-auto w-full max-w-3xl"
-        style={{ containerType: "inline-size" }}
-      >
+      <div className="print-area relative mx-auto w-full max-w-3xl">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={templateSrc}
           alt="Salkara x CISO Marine World — Joint Holiday Discount Coupon"
-          className="h-auto w-full rounded-xl shadow-2xl"
+          className="block h-auto w-full rounded-xl shadow-2xl"
         />
 
-        {/* Coupon code, printed into the blank code box */}
-        <div
-          className="pointer-events-none absolute flex items-center justify-center text-center"
-          style={{ left: "38%", top: "65%", width: "24%", height: "5.5%" }}
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox={`0 0 ${VB_W} ${VB_H}`}
+          aria-hidden="true"
         >
-          <span
-            className="font-mono font-extrabold uppercase leading-none text-marine-navy"
-            style={{ fontSize: "2.55cqw", letterSpacing: "-0.03em" }}
+          {/* Coupon code, printed into the blank code box */}
+          <text
+            x={codeCenterX}
+            y={codeCenterY}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+            fontWeight={800}
+            fontSize={36}
+            letterSpacing={-1}
+            fill="#08213c"
           >
             {code}
-          </span>
-        </div>
+          </text>
 
-        {/* Valid-until date, printed under "OFFER VALID UNTIL:" */}
-        <div
-          className="pointer-events-none absolute text-center"
-          style={{ left: "71.5%", top: "65.2%", width: "22.5%" }}
-        >
-          <span
-            className="font-extrabold leading-none text-marine-navy"
-            style={{ fontSize: "1.9cqw" }}
+          {/* Valid-until date, printed under "OFFER VALID UNTIL:" */}
+          <text
+            x={dateCenterX}
+            y={dateCenterY}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontFamily="ui-sans-serif, system-ui, sans-serif"
+            fontWeight={800}
+            fontSize={23}
+            fill="#08213c"
           >
             {formatDate(validUntil)}
-          </span>
-        </div>
+          </text>
+        </svg>
 
         {marineUsed && (
           <div
             className="pointer-events-none absolute"
-            style={{ left: "62%", top: "66%", width: "15%" }}
+            style={{ left: "65.5%", top: "69.3%", width: "11%" }}
           >
             <MarineStamp date={marineUsedAt} />
           </div>
