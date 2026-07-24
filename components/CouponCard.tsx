@@ -101,6 +101,31 @@ interface Props {
   status: CouponStatus;
   whatsappMasked?: string;
   couponUrl: string;
+  marineUsedAt?: string | null;
+}
+
+/** Rubber-stamp graphic overlaid on the coupon's "STAMP HERE" box once the
+ *  coupon has been used at CISO Marine World. */
+function MarineStamp({ date }: { date?: string | null }) {
+  const when = date ? formatDate(date) : "";
+  return (
+    <div
+      className="stamp-in grid aspect-square w-full place-items-center rounded-full border-[3px] border-marine text-marine opacity-90"
+      style={{ transform: "rotate(-13deg)", boxShadow: "0 0 0 2px rgba(14,111,184,0.25) inset" }}
+    >
+      <div className="text-center leading-none">
+        <div className="text-[9px] font-black uppercase tracking-tight sm:text-[11px]">
+          Redeemed
+        </div>
+        <div className="text-[6px] font-bold uppercase tracking-wider sm:text-[8px]">
+          CISO Marine World
+        </div>
+        {when && (
+          <div className="mt-0.5 text-[5px] font-semibold sm:text-[7px]">{when}</div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function formatDate(d: string): string {
@@ -121,21 +146,33 @@ export default function CouponCard({
   status,
   whatsappMasked,
   couponUrl,
+  marineUsedAt,
 }: Props) {
   const marineUsed = status === "marine_used" || status === "completed";
   const completed = status === "completed";
   const templateSrc = useCouponTemplate();
 
-  // When the poster artwork is uploaded, show it exactly as designed.
+  // When the poster artwork is uploaded, show it exactly as designed, and once
+  // the coupon has been used at Marine World, drop a stamp on the poster's
+  // "STAMP HERE" box. The box position is expressed as a percentage of the
+  // image so it scales with the poster on any screen and in print.
   if (templateSrc) {
     return (
-      <div className="print-area mx-auto w-full max-w-3xl">
+      <div className="print-area relative mx-auto w-full max-w-3xl">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={templateSrc}
           alt="Salkara x CISO Marine World — Joint Holiday Discount Coupon"
           className="h-auto w-full rounded-xl shadow-2xl"
         />
+        {marineUsed && (
+          <div
+            className="pointer-events-none absolute"
+            style={{ left: "62%", top: "66%", width: "15%" }}
+          >
+            <MarineStamp date={marineUsedAt} />
+          </div>
+        )}
       </div>
     );
   }

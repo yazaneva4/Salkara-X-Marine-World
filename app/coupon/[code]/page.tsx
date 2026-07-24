@@ -79,6 +79,7 @@ export default async function CouponPage({
           status={coupon.status}
           whatsappMasked={maskWhatsApp(coupon.whatsapp)}
           couponUrl={url}
+          marineUsedAt={coupon.marineUsedAt}
         />
 
         <div className="mt-6 no-print">
