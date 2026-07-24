@@ -166,7 +166,7 @@ export default function CouponCard({
     // mobile browser handles).
     const VB_W = 1416;
     const VB_H = 1111;
-    const codeFontSize = 36;
+    const codeFontSize = 29;
     const dateFontSize = 23;
     const codeCenterX = VB_W * 0.495; // code box spans ~38%–61%
     const dateCenterX = VB_W * 0.79; // date box spans ~66%–92%
