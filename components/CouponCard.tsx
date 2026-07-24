@@ -166,10 +166,16 @@ export default function CouponCard({
     // mobile browser handles).
     const VB_W = 1416;
     const VB_H = 1111;
+    const codeFontSize = 36;
+    const dateFontSize = 23;
     const codeCenterX = VB_W * 0.495; // code box spans ~38%–61%
-    const codeCenterY = VB_H * 0.66; // vertical middle of the code box
     const dateCenterX = VB_W * 0.79; // date box spans ~66%–92%
-    const dateCenterY = VB_H * 0.675; // just below the "OFFER VALID UNTIL:" label
+    // dominant-baseline="middle" renders inconsistently across browsers for
+    // bold, all-caps text with no descenders (it tends to sit high), so the
+    // baseline is instead computed explicitly: box-center-Y + a fraction of
+    // the font size, which reliably centers the visible glyphs (cap-height).
+    const codeBaselineY = VB_H * 0.66 + codeFontSize * 0.44;
+    const dateBaselineY = VB_H * 0.675 + dateFontSize * 0.44;
 
     return (
       <div className="print-area relative mx-auto w-full max-w-3xl">
@@ -188,12 +194,11 @@ export default function CouponCard({
           {/* Coupon code, printed into the blank code box */}
           <text
             x={codeCenterX}
-            y={codeCenterY}
+            y={codeBaselineY}
             textAnchor="middle"
-            dominantBaseline="middle"
             fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
             fontWeight={800}
-            fontSize={36}
+            fontSize={codeFontSize}
             letterSpacing={-1}
             fill="#08213c"
           >
@@ -203,12 +208,11 @@ export default function CouponCard({
           {/* Valid-until date, printed under "OFFER VALID UNTIL:" */}
           <text
             x={dateCenterX}
-            y={dateCenterY}
+            y={dateBaselineY}
             textAnchor="middle"
-            dominantBaseline="middle"
             fontFamily="ui-sans-serif, system-ui, sans-serif"
             fontWeight={800}
-            fontSize={23}
+            fontSize={dateFontSize}
             fill="#08213c"
           >
             {formatDate(validUntil)}
