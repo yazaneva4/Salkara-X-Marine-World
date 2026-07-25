@@ -154,6 +154,19 @@ export default function CouponCard({
   const completed = status === "completed";
   const templateSrc = useCouponTemplate();
 
+  // Still checking whether a poster file exists (undefined = not resolved
+  // yet). Show a neutral placeholder instead of the coded fallback, so the
+  // fallback design never flashes on screen before the poster loads in.
+  if (templateSrc === undefined) {
+    return (
+      <div
+        className="print-area mx-auto w-full max-w-3xl animate-pulse rounded-xl bg-slate-200"
+        style={{ aspectRatio: "1416 / 1111" }}
+        aria-hidden="true"
+      />
+    );
+  }
+
   // When the poster artwork is uploaded, show it exactly as designed, and once
   // the coupon has been used at Marine World, drop a stamp on the poster's
   // "STAMP HERE" box. The box position is expressed as a percentage of the
