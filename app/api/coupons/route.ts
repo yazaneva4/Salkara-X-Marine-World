@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth";
 import { createCoupon, listCoupons } from "@/lib/store";
+import { publishCouponChanged } from "@/lib/realtime";
 import { normalizeWhatsApp } from "@/lib/coupon";
 import { generateCode } from "@/lib/code";
 import type { Coupon } from "@/lib/types";
@@ -83,8 +84,8 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       lastError = err;
       const msg = err instanceof Error ? err.message.toLowerCase() : "";
-      if (msg.includes("already exists")) continue; // code collision → retry
-      break; // real error → stop and report it
+      if (msg.includes("already exists")) continue;
+      break;
     }
   }
 
@@ -97,6 +98,10 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
+  // Blob is the source of truth. Ably only invalidates connected dashboards;
+  // it intentionally receives no customer PII.
+  await publishCouponChanged(coupon.code);
 
   return NextResponse.json({ coupon }, { status: 201 });
 }
