@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Ably from "ably";
-import { COUPON_REALTIME_CHANNEL } from "./realtime";
 import type { Coupon } from "./types";
+
+const COUPON_REALTIME_CHANNEL = "salkara-marine-coupons";
 
 type RealtimeState = "connecting" | "connected" | "reconnecting" | "unavailable";
 
@@ -65,8 +66,7 @@ export function useCouponRealtime(onSync: CouponSync): RealtimeState {
       if (disposed) return;
       if (change.current === "connected") {
         setState("connected");
-        // A reconnect can span a period in which messages were missed, so
-        // always reconcile with Blob after the connection becomes healthy.
+        // Reconcile with Blob after every reconnect in case messages were missed.
         void sync();
       } else if (
         change.current === "disconnected" ||
