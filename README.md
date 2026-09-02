@@ -12,9 +12,13 @@ A small web app to run the **Joint Holiday Discount Coupon** program between
   coupon to the customer, share it, or contact the venues).
 - The coupon is rendered to match the printed artwork, with a **QR code** that
   opens it.
+- **Both staff dashboards now synchronize in real time**: issuing or redeeming
+  a coupon immediately invalidates connected dashboards, which re-read the
+  latest encrypted state from Vercel Blob.
 
-Built with **Next.js** and deployed on **Vercel**. Data is stored in **Vercel
-Blob** (encrypted at rest). **No Supabase, no external database.**
+Built with **Next.js** and deployed on Vercel. **Vercel Blob remains the
+universal/source-of-truth database** (encrypted at rest). Ably is used only as
+the realtime delivery layer; it does not store coupon records.
 
 ---
 
@@ -35,6 +39,34 @@ World. Redemptions are one-way and cannot be repeated.
 
 ---
 
+## Realtime architecture
+
+The realtime layer is intentionally separate from the database:
+
+```
+Salkara / Marine browser
+        │  authenticated Ably WebSocket
+        ▼
+      Ably channel
+  salkara-marine-coupons
+        ▲
+        │  invalidation event only (coupon code + timestamp)
+        │
+Next.js API route ──▶ encrypted Vercel Blob
+        │                  ▲
+        └── clients re-fetch authenticated /api/coupons ──┘
+```
+
+Customer names and WhatsApp numbers are **not** published to the realtime
+channel. Ably only tells connected clients that coupon state changed; the
+browser then fetches the authoritative encrypted Blob-backed data through the
+existing authenticated API.
+
+If a client disconnects and reconnects, it performs a full synchronization from
+Blob so it can recover from missed realtime events.
+
+---
+
 ## 1. Deploy on Vercel
 
 1. Push this repository to GitHub (already done if you're reading this there).
@@ -44,9 +76,12 @@ World. Redemptions are one-way and cannot be repeated.
    - In the Vercel project → **Storage → Create Database → Blob → Continue**.
    - Connect it to this project. Vercel automatically adds the
      `BLOB_READ_WRITE_TOKEN` environment variable.
-4. Add the remaining **Environment Variables** (Project → Settings →
+4. Create an **Ably API key** with `publish` and `subscribe` access for the
+   `salkara-marine-coupons` channel, then add it to Vercel as `ABLY_API_KEY`.
+   Keep it server-side; never prefix it with `NEXT_PUBLIC_`.
+5. Add the remaining **Environment Variables** (Project → Settings →
    Environment Variables). See the table below.
-5. **Redeploy** so the new environment variables take effect.
+6. **Redeploy** so the environment variables take effect.
 
 ### Environment variables
 
@@ -58,6 +93,7 @@ World. Redemptions are one-way and cannot be repeated.
 | `MARINE_USERNAME` | ✅ | Login for Marine World staff |
 | `MARINE_PASSWORD` | ✅ | Password for Marine World staff |
 | `BLOB_READ_WRITE_TOKEN` | ✅ | Added automatically when you create the Blob store |
+| `ABLY_API_KEY` | ✅ for realtime | Server-side Ably API key used to publish events and issue scoped browser tokens |
 | `NEXT_PUBLIC_SALKARA_WHATSAPP` | optional | Salkara WhatsApp number, digits only incl. country code (e.g. `9665XXXXXXXX`) |
 | `NEXT_PUBLIC_MARINE_WHATSAPP` | optional | Marine World WhatsApp number, digits only |
 | `NEXT_PUBLIC_BASE_URL` | recommended | Your production URL, e.g. `https://your-app.vercel.app`. Used inside WhatsApp coupon links. |
@@ -84,6 +120,10 @@ If you leave `BLOB_READ_WRITE_TOKEN` empty, the app stores coupons in a local
 service. Default logins in that mode are `salkara` / `salkara123` and
 `marine` / `marine123` — **change these for production.**
 
+For cross-browser/device realtime locally, also configure `ABLY_API_KEY`.
+Without it, coupon storage and normal CRUD still work, but realtime delivery is
+disabled.
+
 ---
 
 ## 3. Using the app
@@ -102,6 +142,24 @@ in, the correct redeem button appears right on that page.
 
 ---
 
+## 4. Realtime behavior
+
+When a coupon is issued or redeemed:
+
+1. The Next.js API validates the staff session and business rule.
+2. The encrypted coupon state is written to **Vercel Blob**.
+3. The API publishes a tiny `coupon.changed` invalidation event to Ably.
+4. Connected Salkara and Marine dashboards receive it over a persistent
+   realtime connection.
+5. Each dashboard immediately re-fetches `/api/coupons` and updates its UI.
+6. On reconnect, the dashboard performs another full Blob-backed sync to avoid
+   stale state after a connection interruption.
+
+This is genuine push-based realtime synchronization; it is **not polling** and
+it does not turn Ably into the database.
+
+---
+
 ## Notes on storage & privacy
 
 - Coupon data (names + WhatsApp numbers) is **encrypted with AES-256-GCM**
@@ -110,11 +168,13 @@ in, the correct redeem button appears right on that page.
 - Volume is expected to be low (one restaurant group + one attraction), so a
   single JSON blob is used with last-write-wins semantics. If you expect heavy
   simultaneous redemptions, move to a store with atomic updates.
+- Realtime messages contain no customer PII.
 
 ## Tech
 
 - Next.js 14 (App Router), React 18, TypeScript
 - Tailwind CSS
-- `@vercel/blob` for storage
+- `@vercel/blob` for the source-of-truth storage
+- `ably` for realtime pub/sub transport
 - `jose` for signed session cookies
 - `qrcode.react` for the coupon QR code

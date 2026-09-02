@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth";
 import { updateCoupon } from "@/lib/store";
+import { publishCouponChanged } from "@/lib/realtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,6 +38,8 @@ export async function POST(
         salkaraUsedBy: session.username,
       };
     });
+
+    await publishCouponChanged(coupon.code);
     return NextResponse.json({ coupon });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not redeem coupon";

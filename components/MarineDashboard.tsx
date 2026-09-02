@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import StatusBadge from "./StatusBadge";
 import WhatsAppButton from "./WhatsAppButton";
 import { couponUrl } from "@/lib/client";
 import { contactSalkaraMessage } from "@/lib/whatsapp";
+import { useCouponRealtime } from "@/lib/useCouponRealtime";
 import type { Coupon } from "@/lib/types";
 
 const SALKARA_WA = process.env.NEXT_PUBLIC_SALKARA_WHATSAPP || "";
@@ -22,6 +23,15 @@ export default function MarineDashboard({
   const [busy, setBusy] = useState(false);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+
+  const syncCoupons = useCallback((nextCoupons: Coupon[]) => {
+    setCoupons(nextCoupons);
+    setFound((current) => {
+      if (!current) return current;
+      return nextCoupons.find((coupon) => coupon.code === current.code) || current;
+    });
+  }, []);
+  const realtimeState = useCouponRealtime(syncCoupons);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -74,14 +84,36 @@ export default function MarineDashboard({
     }
   }
 
+  const realtimeLabel =
+    realtimeState === "connected"
+      ? "Live"
+      : realtimeState === "reconnecting"
+        ? "Reconnecting…"
+        : realtimeState === "connecting"
+          ? "Connecting…"
+          : "Offline";
+
   return (
     <div className="space-y-6">
       {/* Lookup / redeem */}
       <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h2 className="text-lg font-bold text-slate-800">Redeem a coupon</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Scan the QR code on the customer&apos;s coupon, or type the code below.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">Redeem a coupon</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Scan the QR code on the customer&apos;s coupon, or type the code below.
+            </p>
+          </div>
+          <span
+            className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${
+              realtimeState === "connected"
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-slate-100 text-slate-500"
+            }`}
+          >
+            {realtimeLabel}
+          </span>
+        </div>
 
         <form onSubmit={find} className="mt-4 flex flex-wrap gap-2">
           <input
@@ -109,9 +141,7 @@ export default function MarineDashboard({
           <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <div className="font-mono text-sm font-bold text-marine">
-                  {found.code}
-                </div>
+                <div className="font-mono text-sm font-bold text-marine">{found.code}</div>
                 <div className="text-sm text-slate-600">{found.name}</div>
               </div>
               <StatusBadge status={found.status} />
@@ -152,9 +182,7 @@ export default function MarineDashboard({
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-slate-800">
             Coupons{" "}
-            <span className="text-sm font-normal text-slate-400">
-              ({coupons.length})
-            </span>
+            <span className="text-sm font-normal text-slate-400">({coupons.length})</span>
           </h2>
           <input
             value={query}
@@ -165,9 +193,7 @@ export default function MarineDashboard({
         </div>
 
         {filtered.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-400">
-            No coupons found.
-          </p>
+          <p className="py-8 text-center text-sm text-slate-400">No coupons found.</p>
         ) : (
           <div className="divide-y divide-slate-100">
             {filtered.map((c) => (
