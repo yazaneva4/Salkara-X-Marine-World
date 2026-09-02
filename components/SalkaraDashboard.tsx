@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import StatusBadge from "./StatusBadge";
 import WhatsAppButton from "./WhatsAppButton";
 import { couponUrl, defaultValidUntil } from "@/lib/client";
 import { customerCouponMessage, completedMessage } from "@/lib/whatsapp";
+import { useCouponRealtime } from "@/lib/useCouponRealtime";
 import type { Coupon } from "@/lib/types";
 
 export default function SalkaraDashboard({
@@ -23,6 +24,11 @@ export default function SalkaraDashboard({
   const [justIssued, setJustIssued] = useState<Coupon | null>(null);
   const [query, setQuery] = useState("");
   const [rowBusy, setRowBusy] = useState<string | null>(null);
+
+  const syncCoupons = useCallback((nextCoupons: Coupon[]) => {
+    setCoupons(nextCoupons);
+  }, []);
+  const realtimeState = useCouponRealtime(syncCoupons);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -51,7 +57,7 @@ export default function SalkaraDashboard({
         setError(data.error || "Could not issue coupon");
         return;
       }
-      setCoupons((prev) => [data.coupon, ...prev]);
+      setCoupons((prev) => [data.coupon, ...prev.filter((c) => c.code !== data.coupon.code)]);
       setJustIssued(data.coupon);
       setName("");
       setWhatsapp("");
@@ -79,6 +85,15 @@ export default function SalkaraDashboard({
       setRowBusy(null);
     }
   }
+
+  const realtimeLabel =
+    realtimeState === "connected"
+      ? "Live"
+      : realtimeState === "reconnecting"
+        ? "Reconnecting…"
+        : realtimeState === "connecting"
+          ? "Connecting…"
+          : "Offline";
 
   return (
     <div className="grid gap-6 lg:grid-cols-[380px,1fr]">
@@ -190,12 +205,21 @@ export default function SalkaraDashboard({
       <section>
         <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-slate-800">
-              All coupons{" "}
-              <span className="text-sm font-normal text-slate-400">
-                ({coupons.length})
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-slate-800">
+                All coupons{" "}
+                <span className="text-sm font-normal text-slate-400">({coupons.length})</span>
+              </h2>
+              <span
+                className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                  realtimeState === "connected"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {realtimeLabel}
               </span>
-            </h2>
+            </div>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
