@@ -1,6 +1,6 @@
 import "server-only";
 
-import Ably from "ably";
+import * as Ably from "ably";
 
 export const COUPON_REALTIME_CHANNEL = "salkara-marine-coupons";
 
