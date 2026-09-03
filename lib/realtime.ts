@@ -15,8 +15,7 @@ function getAbly(): Ably.Rest | null {
 
 /**
  * Notify connected dashboards that the Blob-backed coupon state changed.
- * The event deliberately contains no customer PII; clients re-read the
- * authenticated API, which remains the source of truth backed by Vercel Blob.
+ * The event contains no customer PII; clients re-read the authenticated API.
  * Realtime delivery is best-effort so an Ably outage never makes a successful
  * coupon write look like a failed write.
  */
