@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import Ably from "ably";
+import * as Ably from "ably";
 import { getServerSession } from "@/lib/auth";
 import { COUPON_REALTIME_CHANNEL } from "@/lib/realtime";
 
