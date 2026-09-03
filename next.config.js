@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    // Ably's Node bundle has dynamic requires that Next's App Router bundler
-    // should leave to native Node.js resolution.
+    // Keep the Node Ably SDK external to Next's server bundle. The browser
+    // realtime hook loads the browser SDK separately at runtime.
     serverComponentsExternalPackages: ["ably"],
   },
 };
