@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Ably from "ably";
 import type { Coupon } from "./types";
 
 const COUPON_REALTIME_CHANNEL = "salkara-marine-coupons";
@@ -22,9 +21,9 @@ async function fetchCoupons(): Promise<Coupon[] | null> {
 
 /**
  * Keeps a dashboard synchronized with the Blob-backed source of truth.
- * Ably only carries an invalidation event; the actual coupon data is always
- * re-fetched through the authenticated API, so customer data is never sent
- * over the public realtime channel.
+ * The browser talks to the local API for coupon data and loads the realtime
+ * client SDK dynamically so the server-only Ably build is not parsed into
+ * the Next.js client bundle.
  */
 export function useCouponRealtime(onSync: CouponSync): RealtimeState {
   const onSyncRef = useRef(onSync);
@@ -37,6 +36,10 @@ export function useCouponRealtime(onSync: CouponSync): RealtimeState {
   useEffect(() => {
     let disposed = false;
     let syncTimer: ReturnType<typeof setTimeout> | null = null;
+    let realtime: import("ably").default | null = null;
+    let channel: ReturnType<NonNullable<typeof realtime>["channels"]["get"]> | null = null;
+    let connectionHandler: ((change: import("ably").Types.ConnectionStateChange) => void) | null = null;
+    let messageHandler: (() => void) | null = null;
 
     const sync = async () => {
       try {
@@ -55,41 +58,53 @@ export function useCouponRealtime(onSync: CouponSync): RealtimeState {
       }, 75);
     };
 
-    const realtime = new Ably.Realtime({
-      authUrl: "/api/realtime/auth",
-      recover: (_, callback) => callback(true),
-    });
-    const channel = realtime.channels.get(COUPON_REALTIME_CHANNEL);
+    const startRealtime = async () => {
+      try {
+        // Dynamic import keeps Ably out of the initial client module graph.
+        const { default: Ably } = await import("ably");
+        if (disposed) return;
 
-    const messageHandler = () => scheduleSync();
-    const connectionHandler = (change: Ably.Types.ConnectionStateChange) => {
-      if (disposed) return;
-      if (change.current === "connected") {
-        setState("connected");
-        // Reconcile with Blob after every reconnect in case messages were missed.
-        void sync();
-      } else if (
-        change.current === "disconnected" ||
-        change.current === "connecting" ||
-        change.current === "suspended"
-      ) {
-        setState("reconnecting");
-      } else if (change.current === "failed") {
-        setState("unavailable");
+        realtime = new Ably.Realtime({
+          authUrl: "/api/realtime/auth",
+          recover: (_, callback) => callback(true),
+        });
+        channel = realtime.channels.get(COUPON_REALTIME_CHANNEL);
+
+        messageHandler = () => scheduleSync();
+        connectionHandler = (change: import("ably").Types.ConnectionStateChange) => {
+          if (disposed) return;
+          if (change.current === "connected") {
+            setState("connected");
+            void sync();
+          } else if (
+            change.current === "disconnected" ||
+            change.current === "connecting" ||
+            change.current === "suspended"
+          ) {
+            setState("reconnecting");
+          } else if (change.current === "failed") {
+            setState("unavailable");
+          }
+        };
+
+        channel.subscribe("coupon.changed", messageHandler).catch(() => {
+          if (!disposed) setState("unavailable");
+        });
+        realtime.connection.on(connectionHandler);
+      } catch {
+        if (!disposed) setState("unavailable");
       }
     };
 
-    channel.subscribe("coupon.changed", messageHandler).catch(() => {
-      if (!disposed) setState("unavailable");
-    });
-    realtime.connection.on(connectionHandler);
+    void sync();
+    void startRealtime();
 
     return () => {
       disposed = true;
       if (syncTimer) clearTimeout(syncTimer);
-      channel.unsubscribe("coupon.changed", messageHandler);
-      realtime.connection.off(connectionHandler);
-      realtime.close();
+      if (channel && messageHandler) channel.unsubscribe("coupon.changed", messageHandler);
+      if (realtime && connectionHandler) realtime.connection.off(connectionHandler);
+      realtime?.close();
     };
   }, []);
 
