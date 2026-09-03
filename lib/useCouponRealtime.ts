@@ -13,11 +13,7 @@ type AblyBrowser = {
   Realtime: new (options: {
     authUrl: string;
     recover: (lastConnectionDetails: unknown, callback: (shouldRecover: boolean) => void) => void;
-  }) => {
-    channels: { get: (name: string) => { subscribe: (event: string, handler: () => void) => Promise<void> | void; unsubscribe: (event: string, handler: () => void) => void } };
-    connection: { on: (handler: (change: { current: string }) => void) => void; off: (handler: (change: { current: string }) => void) => void };
-    close: () => void;
-  };
+  }) => any;
 };
 
 declare global {
@@ -60,8 +56,8 @@ function loadAblyBrowser(): Promise<AblyBrowser> {
 /**
  * Keeps dashboards synchronized with the Blob-backed source of truth.
  * Realtime only carries an invalidation event; coupon data is re-fetched from
- * the authenticated API. The browser SDK is loaded from Ably's browser CDN
- * so the Node/server Ably package never enters the Next.js client bundle.
+ * the authenticated API. The Node/server Ably package is never imported by
+ * this client hook, preventing it from entering the Next.js client bundle.
  */
 export function useCouponRealtime(onSync: CouponSync): RealtimeState {
   const onSyncRef = useRef(onSync);
@@ -74,8 +70,8 @@ export function useCouponRealtime(onSync: CouponSync): RealtimeState {
   useEffect(() => {
     let disposed = false;
     let syncTimer: ReturnType<typeof setTimeout> | null = null;
-    let realtime: AblyBrowser["Realtime"] extends new (...args: any[]) => infer R ? R : never;
-    let channel: ReturnType<NonNullable<typeof realtime> extends infer R ? R extends { channels: { get: (...args: any[]) => infer C } } ? R["channels"]["get"] : never : never> | null = null;
+    let realtime: any = null;
+    let channel: any = null;
     let connectionHandler: ((change: { current: string }) => void) | null = null;
     let messageHandler: (() => void) | null = null;
 
