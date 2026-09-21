@@ -4,6 +4,10 @@ import * as Ably from "ably";
 
 export const COUPON_REALTIME_CHANNEL = "salkara-marine-coupons";
 
+export function couponRealtimeChannel(code: string): string {
+  return `salkara-marine-coupon:${code.trim().toUpperCase()}`;
+}
+
 let client: Ably.Rest | null = null;
 
 function getAbly(): Ably.Rest | null {
@@ -27,10 +31,16 @@ export async function publishCouponChanged(code: string): Promise<void> {
   }
 
   try {
-    await ably.channels.get(COUPON_REALTIME_CHANNEL).publish("coupon.changed", {
-      code,
-      at: new Date().toISOString(),
-    });
+    const event = { code, at: new Date().toISOString() };
+    const results = await Promise.allSettled([
+      ably.channels.get(COUPON_REALTIME_CHANNEL).publish("coupon.changed", event),
+      ably.channels.get(couponRealtimeChannel(code)).publish("coupon.changed", event),
+    ]);
+    for (const result of results) {
+      if (result.status === "rejected") {
+        console.error("Failed to publish coupon realtime event:", result.reason);
+      }
+    }
   } catch (error) {
     console.error("Failed to publish coupon realtime event:", error);
   }

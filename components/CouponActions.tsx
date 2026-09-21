@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import WhatsAppButton from "./WhatsAppButton";
 import { CheckIcon } from "./Icons";
 import type { CouponStatus, Role } from "@/lib/types";
@@ -51,6 +51,12 @@ export default function CouponActions({
   const [salkaraAt, setSalkaraAt] = useState<string | null>(salkaraUsedAt);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setStatus(initialStatus);
+    setMarineAt(marineUsedAt);
+    setSalkaraAt(salkaraUsedAt);
+  }, [initialStatus, marineUsedAt, salkaraUsedAt]);
 
   async function redeem(kind: "marine" | "salkara") {
     setBusy(true);

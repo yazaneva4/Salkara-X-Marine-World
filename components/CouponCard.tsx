@@ -109,23 +109,30 @@ interface Props {
 function MarineStamp({ date }: { date?: string | null }) {
   const when = date ? formatDate(date) : "";
   return (
-    <div
-      className="stamp-in grid aspect-square w-full place-items-center rounded-full border-[3px] border-marine text-marine opacity-90"
-      style={{ transform: "rotate(-13deg)", boxShadow: "0 0 0 2px rgba(14,111,184,0.25) inset" }}
-    >
-      <div className="text-center leading-none">
-        <div className="text-[6px] font-black uppercase tracking-tight sm:text-[8px]">
-          Redeemed
-        </div>
-        <div className="mt-px text-[4px] font-bold uppercase leading-tight tracking-wider sm:text-[5.5px]">
-          CISO Marine
-          <br />
-          World
-        </div>
-        {when && (
-          <div className="mt-px text-[4px] font-semibold sm:text-[5px]">{when}</div>
-        )}
-      </div>
+    <div className="stamp-in w-full">
+      <svg
+        viewBox="0 0 440 92"
+        role="img"
+        aria-label={`Redeemed at CISO Marine World${when ? ` on ${when}` : ""}`}
+        className="block h-auto w-full overflow-visible text-marine"
+      >
+        <rect x="4" y="4" width="432" height="84" rx="14" fill="white" fillOpacity="0.9" stroke="currentColor" strokeWidth="5" />
+        <rect x="12" y="12" width="416" height="68" rx="9" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="8 5" />
+        <circle cx="50" cy="46" r="25" fill="none" stroke="currentColor" strokeWidth="4" />
+        <path d="M35 46l10 10 20-22" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M86 17v58" stroke="currentColor" strokeWidth="2" opacity="0.55" />
+        <text x="260" y="30" textAnchor="middle" fill="currentColor" fontFamily="ui-sans-serif, system-ui, sans-serif" fontSize="15" fontWeight="900" letterSpacing="2.4">
+          CISO MARINE WORLD
+        </text>
+        <text x="260" y="59" textAnchor="middle" fill="currentColor" fontFamily="ui-sans-serif, system-ui, sans-serif" fontSize="27" fontWeight="1000" letterSpacing="1.4">
+          REDEEMED
+        </text>
+        {when ? (
+          <text x="260" y="77" textAnchor="middle" fill="currentColor" fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace" fontSize="11" fontWeight="800" letterSpacing="1">
+            {when.toUpperCase()}
+          </text>
+        ) : null}
+      </svg>
     </div>
   );
 }
@@ -235,7 +242,7 @@ export default function CouponCard({
         {marineUsed && (
           <div
             className="pointer-events-none absolute"
-            style={{ left: "65.5%", top: "69.3%", width: "11%" }}
+            style={{ left: "52%", top: "73.1%", width: "30.4%" }}
           >
             <MarineStamp date={marineUsedAt} />
           </div>
@@ -409,13 +416,8 @@ export default function CouponCard({
           {/* Stamp area */}
           <div className="relative mx-auto grid h-20 w-36 place-items-center rounded-xl bg-white text-center shadow-inner">
             {marineUsed ? (
-              <div className="stamp-in select-none rounded-md border-4 border-emerald-500 px-2 py-1 text-emerald-600">
-                <div className="text-[11px] font-black uppercase leading-none tracking-wide">
-                  Redeemed
-                </div>
-                <div className="text-[8px] font-semibold uppercase tracking-wider">
-                  Marine World
-                </div>
+              <div className="w-[92%] select-none">
+                <MarineStamp date={marineUsedAt} />
               </div>
             ) : (
               <span className="text-xs font-extrabold uppercase tracking-widest text-slate-300">

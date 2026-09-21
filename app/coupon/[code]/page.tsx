@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import CouponCard from "@/components/CouponCard";
-import CouponActions from "@/components/CouponActions";
+import CouponLiveView from "@/components/CouponLiveView";
 import { getServerSession } from "@/lib/auth";
 import { getCoupon } from "@/lib/store";
 import { maskWhatsApp } from "@/lib/coupon";
@@ -72,29 +71,18 @@ export default async function CouponPage({
           )}
         </div>
 
-        <CouponCard
+        <CouponLiveView
           code={coupon.code}
           name={coupon.name}
           validUntil={coupon.validUntil}
-          status={coupon.status}
+          initialStatus={coupon.status}
           whatsappMasked={maskWhatsApp(coupon.whatsapp)}
           couponUrl={url}
           marineUsedAt={coupon.marineUsedAt}
+          salkaraUsedAt={coupon.salkaraUsedAt}
+          role={session?.role ?? null}
+          customerWhatsapp={isStaff ? coupon.whatsapp : undefined}
         />
-
-        <div className="mt-6 no-print">
-          <CouponActions
-            code={coupon.code}
-            name={coupon.name}
-            validUntil={coupon.validUntil}
-            initialStatus={coupon.status}
-            marineUsedAt={coupon.marineUsedAt}
-            salkaraUsedAt={coupon.salkaraUsedAt}
-            role={session?.role ?? null}
-            couponUrl={url}
-            customerWhatsapp={isStaff ? coupon.whatsapp : undefined}
-          />
-        </div>
       </div>
     </main>
   );

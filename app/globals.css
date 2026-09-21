@@ -15,21 +15,23 @@
 /* Coupon stamp animation */
 @keyframes stampIn {
   0% {
-    transform: scale(1.6) rotate(-18deg);
+    transform: scale(1.35) rotate(-7deg);
     opacity: 0;
   }
   60% {
-    transform: scale(0.92) rotate(-12deg);
+    transform: scale(0.96) rotate(-2deg);
     opacity: 1;
   }
   100% {
-    transform: scale(1) rotate(-12deg);
+    transform: scale(1) rotate(-3deg);
     opacity: 1;
   }
 }
 
 .stamp-in {
   animation: stampIn 0.45s ease-out both;
+  filter: drop-shadow(0 1px 0 rgb(14 111 184 / 20%));
+  transform-origin: center;
 }
 
 /* ------------------------------------------------------------------ */
