@@ -6,9 +6,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
-  const coupon = await getCoupon(params.code);
+  const { code } = await params;
+  const coupon = await getCoupon(code);
   if (!coupon) {
     return NextResponse.json({ error: "Coupon not found" }, { status: 404 });
   }

@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(
   _req: Request,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
+  const { code } = await params;
   const session = await getServerSession();
   if (!session) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
@@ -22,7 +23,7 @@ export async function POST(
   }
 
   try {
-    const coupon = await updateCoupon(params.code, (c) => {
+    const coupon = await updateCoupon(code, (c) => {
       if (c.status === "issued") {
         throw new Error(
           "Customer must use this coupon at CISO Marine World before the Salkara discount can be applied."

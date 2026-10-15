@@ -14,6 +14,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
+  if (!body || typeof body !== "object" || Array.isArray(body) ||
+      typeof body.username !== "string" || typeof body.password !== "string") {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
   const role = body.role as Role;
   const username = (body.username || "").trim();
   const password = body.password || "";
