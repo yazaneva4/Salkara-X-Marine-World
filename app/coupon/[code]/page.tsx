@@ -7,10 +7,10 @@ import { maskWhatsApp } from "@/lib/coupon";
 
 export const dynamic = "force-dynamic";
 
-function absoluteBase(): string {
+async function absoluteBase(): Promise<string> {
   const env = process.env.NEXT_PUBLIC_BASE_URL;
   if (env) return env.replace(/\/$/, "");
-  const h = headers();
+  const h = await headers();
   const host = h.get("x-forwarded-host") || h.get("host") || "localhost:3000";
   const proto = h.get("x-forwarded-proto") || "https";
   return `${proto}://${host}`;
@@ -19,13 +19,14 @@ function absoluteBase(): string {
 export default async function CouponPage({
   params,
 }: {
-  params: { code: string };
+  params: Promise<{ code: string }>;
 }) {
-  const coupon = await getCoupon(params.code);
+  const { code } = await params;
+  const coupon = await getCoupon(code);
   const session = await getServerSession();
   const isStaff = !!session;
 
-  const url = `${absoluteBase()}/coupon/${encodeURIComponent(params.code)}`;
+  const url = `${await absoluteBase()}/coupon/${encodeURIComponent(code)}`;
 
   if (!coupon) {
     return (
@@ -34,7 +35,7 @@ export default async function CouponPage({
           <div className="text-4xl">🔍</div>
           <h1 className="mt-3 text-lg font-bold text-slate-800">Coupon not found</h1>
           <p className="mt-1 text-sm text-slate-500">
-            The code <span className="font-mono">{params.code}</span> does not exist.
+            The code <span className="font-mono">{code}</span> does not exist.
           </p>
           <Link
             href="/"

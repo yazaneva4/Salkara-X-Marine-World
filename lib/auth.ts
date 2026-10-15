@@ -28,7 +28,7 @@ export async function verifyToken(token: string): Promise<Session | null> {
 
 /** Read and verify the session from the request cookies (server components / route handlers). */
 export async function getServerSession(): Promise<Session | null> {
-  const token = cookies().get(SESSION_COOKIE)?.value;
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
   return verifyToken(token);
 }
