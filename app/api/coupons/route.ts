@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth";
 import { createCoupon, listCoupons } from "@/lib/store";
 import { publishCouponChanged } from "@/lib/realtime";
-import { normalizeWhatsApp } from "@/lib/coupon";
+import { normalizeWhatsApp, validCouponDate } from "@/lib/coupon";
 import { generateCode } from "@/lib/code";
 import type { Coupon } from "@/lib/types";
 
@@ -37,7 +37,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const name = (body.name || "").trim();
+  if (!body || typeof body !== "object" || Array.isArray(body) ||
+      typeof body.name !== "string" || typeof body.whatsapp !== "string" ||
+      typeof body.validUntil !== "string" ||
+      (body.notes !== undefined && typeof body.notes !== "string")) {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  const name = body.name.trim();
   const whatsapp = normalizeWhatsApp(body.whatsapp || "");
   const validUntil = (body.validUntil || "").trim();
   const notes = (body.notes || "").trim();
@@ -51,7 +58,7 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(validUntil)) {
+  if (!validCouponDate(validUntil)) {
     return NextResponse.json(
       { error: "A valid 'valid until' date is required" },
       { status: 400 }

@@ -2,9 +2,10 @@ import "server-only";
 import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { get, list, put } from "@vercel/blob";
+import { get, list, put, BlobPreconditionFailedError } from "@vercel/blob";
 import { appConfig } from "./config";
 import type { Coupon } from "./types";
+import { updateSnapshot } from "./storage-update";
 
 /**
  * Storage layer.
@@ -149,13 +150,22 @@ function decrypt(buf: Buffer): string {
   return Buffer.concat([decipher.update(data), decipher.final()]).toString("utf8");
 }
 
-async function readAll(): Promise<Coupon[]> {
+type Snapshot = { coupons: Coupon[]; etag: string | null };
+function parseCoupons(json: string): Coupon[] {
+  const value: unknown = JSON.parse(json);
+  if (!Array.isArray(value) || value.some(c => !c || typeof c.code !== "string" || typeof c.issuedAt !== "string")) {
+    throw new Error("Coupon storage is invalid; refusing to overwrite it.");
+  }
+  return value as Coupon[];
+}
+async function readSnapshot(): Promise<Snapshot> {
   if (!useBlob) {
     try {
       const raw = await fs.readFile(LOCAL_PATH, "utf8");
-      return JSON.parse(raw) as Coupon[];
-    } catch {
-      return [];
+      return { coupons: parseCoupons(raw), etag: null };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return { coupons: [], etag: null };
+      throw error;
     }
   }
 
@@ -169,24 +179,21 @@ async function readAll(): Promise<Coupon[]> {
     try {
       const result = await get(DB_PATHNAME, { access, token, useCache: false });
       cachedAccess = access;
-      if (!result || !result.stream) return [];
+      if (!result) return { coupons: [], etag: null };
+      if (result.statusCode !== 200 || !result.stream) throw new Error("Coupon storage read failed.");
       const buf = Buffer.from(await new Response(result.stream).arrayBuffer());
-      try {
-        return JSON.parse(decrypt(buf)) as Coupon[];
-      } catch {
-        return [];
-      }
+      return { coupons: parseCoupons(decrypt(buf)), etag: result.blob.etag };
     } catch (err) {
       lastError = err;
       if (isAccessMismatch(err)) continue; // wrong access mode — try the other
-      if (isNotFound(err)) return []; // no data yet
+      if (isNotFound(err)) return { coupons: [], etag: null }; // no data yet
       throw err;
     }
   }
   throw lastError;
 }
 
-async function writeAll(coupons: Coupon[]): Promise<void> {
+async function writeAll(coupons: Coupon[], etag: string | null): Promise<void> {
   const json = JSON.stringify(coupons);
   if (!useBlob) {
     // On Vercel the filesystem is read-only, so local-file mode can't work.
@@ -197,7 +204,13 @@ async function writeAll(coupons: Coupon[]): Promise<void> {
       );
     }
     await fs.mkdir(path.dirname(LOCAL_PATH), { recursive: true });
-    await fs.writeFile(LOCAL_PATH, json, "utf8");
+    const temporary = `${LOCAL_PATH}.${crypto.randomUUID()}.tmp`;
+    try {
+      await fs.writeFile(temporary, json, "utf8");
+      await fs.rename(temporary, LOCAL_PATH);
+    } finally {
+      await fs.rm(temporary, { force: true });
+    }
     return;
   }
 
@@ -212,7 +225,8 @@ async function writeAll(coupons: Coupon[]): Promise<void> {
       await put(DB_PATHNAME, body, {
         access,
         addRandomSuffix: false,
-        allowOverwrite: true,
+        allowOverwrite: etag !== null,
+        ifMatch: etag ?? undefined,
         contentType: "application/octet-stream",
         cacheControlMaxAge: 0,
         token,
@@ -228,6 +242,22 @@ async function writeAll(coupons: Coupon[]): Promise<void> {
   throw lastError;
 }
 
+async function readAll(): Promise<Coupon[]> {
+  return (await readSnapshot()).coupons;
+}
+
+// Blob ETags protect writes across server instances. The queue also serializes
+// the local development file, which has no conditional-write API.
+let pendingWrite: Promise<unknown> = Promise.resolve();
+function mutateCoupons<T>(mutate: (coupons: Coupon[]) => T): Promise<T> {
+  const run = () => updateSnapshot(readSnapshot, writeAll, mutate, error =>
+    error instanceof BlobPreconditionFailedError ||
+    (error instanceof Error && /already exists/i.test(error.message)));
+  const next = pendingWrite.then(run, run);
+  pendingWrite = next.catch(() => {});
+  return next;
+}
+
 export async function listCoupons(): Promise<Coupon[]> {
   const all = await readAll();
   return all.sort((a, b) => b.issuedAt.localeCompare(a.issuedAt));
@@ -240,13 +270,13 @@ export async function getCoupon(code: string): Promise<Coupon | null> {
 }
 
 export async function createCoupon(coupon: Coupon): Promise<Coupon> {
-  const all = await readAll();
-  if (all.some((c) => c.code.toLowerCase() === coupon.code.toLowerCase())) {
-    throw new Error("A coupon with this code already exists");
-  }
-  all.push(coupon);
-  await writeAll(all);
-  return coupon;
+  return mutateCoupons(all => {
+    if (all.some(c => c.code.toLowerCase() === coupon.code.toLowerCase())) {
+      throw new Error("A coupon with this code already exists");
+    }
+    all.push(coupon);
+    return coupon;
+  });
 }
 
 /**
@@ -257,15 +287,14 @@ export async function updateCoupon(
   code: string,
   mutate: (current: Coupon) => Coupon
 ): Promise<Coupon> {
-  const all = await readAll();
-  const needle = code.trim().toLowerCase();
-  const idx = all.findIndex((c) => c.code.toLowerCase() === needle);
-  if (idx === -1) throw new Error("Coupon not found");
-
-  const updated = mutate({ ...all[idx] });
-  all[idx] = updated;
-  await writeAll(all);
-  return updated;
+  return mutateCoupons(all => {
+    const needle = code.trim().toLowerCase();
+    const idx = all.findIndex(c => c.code.toLowerCase() === needle);
+    if (idx === -1) throw new Error("Coupon not found");
+    const updated = mutate({ ...all[idx] });
+    all[idx] = updated;
+    return updated;
+  });
 }
 
 export function isStorageConfigured(): boolean {
