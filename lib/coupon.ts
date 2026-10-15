@@ -35,3 +35,20 @@ export function statusLabel(status: Coupon["status"]): string {
       return "Completed — both discounts applied";
   }
 }
+
+
+/** Reject date-shaped values such as February 30 instead of normalizing them. */
+export function validCouponDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+/** Coupons remain valid through the end of their printed date in Saudi time. */
+export function couponExpired(validUntil: string, now = new Date()): boolean {
+  if (!validCouponDate(validUntil)) return true;
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(now);
+  return validUntil < today;
+}

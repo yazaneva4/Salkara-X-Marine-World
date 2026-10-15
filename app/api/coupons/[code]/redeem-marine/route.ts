@@ -1,3 +1,4 @@
+import { couponExpired } from "@/lib/coupon";
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth";
 import { updateCoupon } from "@/lib/store";
@@ -24,6 +25,7 @@ export async function POST(
 
   try {
     const coupon = await updateCoupon(code, (c) => {
+      if (couponExpired(c.validUntil)) throw new Error("This coupon has expired.");
       if (c.status !== "issued") {
         throw new Error(
           c.status === "completed"

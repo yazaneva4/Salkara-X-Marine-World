@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { couponExpired } from "@/lib/coupon";
 import WhatsAppButton from "./WhatsAppButton";
 import { CheckIcon } from "./Icons";
 import type { CouponStatus, Role } from "@/lib/types";
@@ -49,6 +50,7 @@ export default function CouponActions({
   const [status, setStatus] = useState<CouponStatus>(initialStatus);
   const [marineAt, setMarineAt] = useState<string | null>(marineUsedAt);
   const [salkaraAt, setSalkaraAt] = useState<string | null>(salkaraUsedAt);
+  const [expired, setExpired] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +59,13 @@ export default function CouponActions({
     setMarineAt(marineUsedAt);
     setSalkaraAt(salkaraUsedAt);
   }, [initialStatus, marineUsedAt, salkaraUsedAt]);
+
+  useEffect(() => {
+    const refresh = () => setExpired(couponExpired(validUntil));
+    refresh();
+    const timer = setInterval(refresh, 60_000);
+    return () => clearInterval(timer);
+  }, [validUntil]);
 
   async function redeem(kind: "marine" | "salkara") {
     setBusy(true);
@@ -115,14 +124,20 @@ export default function CouponActions({
         </div>
       )}
 
+      {expired && status !== "completed" && (
+        <p role="status" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          This coupon has expired and can no longer be redeemed.
+        </p>
+      )}
+
       {/* Role-specific actions */}
-      {role === "marine" && (
+      {role === "marine" && !expired && (
         <div className="rounded-xl border border-marine/30 bg-marine/5 p-4">
           <h3 className="mb-2 text-sm font-bold text-marine-dark">CISO Marine World</h3>
           {status === "issued" ? (
             <button
               onClick={() => redeem("marine")}
-              disabled={busy}
+              disabled={busy || expired}
               className="w-full rounded-lg bg-marine px-4 py-3 text-sm font-bold text-white hover:bg-marine-light disabled:opacity-60"
             >
               {busy ? "Processing…" : "✓ Give 10% off tickets & mark as used"}
@@ -136,7 +151,7 @@ export default function CouponActions({
         </div>
       )}
 
-      {role === "salkara" && (
+      {role === "salkara" && (!expired || status === "completed") && (
         <div className="rounded-xl border border-salkara/30 bg-salkara/5 p-4">
           <h3 className="mb-2 text-sm font-bold text-salkara-dark">Salkara Restaurant</h3>
           {status === "issued" && (
@@ -153,7 +168,7 @@ export default function CouponActions({
               </p>
               <button
                 onClick={() => redeem("salkara")}
-                disabled={busy}
+                disabled={busy || expired}
                 className="w-full rounded-lg bg-salkara px-4 py-3 text-sm font-bold text-white hover:bg-salkara-light disabled:opacity-60"
               >
                 {busy ? "Processing…" : "✓ Apply 10% food discount & complete"}
@@ -179,7 +194,7 @@ export default function CouponActions({
       )}
 
       {/* Staff sharing tools */}
-      {role && customerWhatsapp && status !== "completed" && (
+      {role && customerWhatsapp && status !== "completed" && !expired && (
         <div className="flex flex-wrap gap-2">
           <WhatsAppButton
             number={customerWhatsapp}
@@ -200,8 +215,7 @@ export default function CouponActions({
       {!role && (
         <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
           <p className="text-sm text-slate-600">
-            Show this coupon at the venue. Staff will scan the code to apply your
-            discount. Questions? Message us:
+            {expired ? "This coupon is no longer valid. Questions? Message us:" : "Show this coupon at the venue. Staff will scan the code to apply your discount. Questions? Message us:"}
           </p>
           <div className="flex flex-wrap gap-2">
             {MARINE_WA && (
