@@ -77,14 +77,12 @@ async function resolveWorkingToken(): Promise<string> {
     );
   }
 
-  let lastError: unknown = null;
   for (const token of candidates) {
     try {
       await list({ prefix: DB_PATHNAME, limit: 1, token });
       workingToken = token;
       return token;
     } catch (err) {
-      lastError = err;
       if (isDeadStoreError(err)) continue; // stale/dead token — try the next one
       throw err; // a different failure (e.g. network) — surface it
     }

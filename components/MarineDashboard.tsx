@@ -4,7 +4,6 @@ import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import StatusBadge from "./StatusBadge";
 import WhatsAppButton from "./WhatsAppButton";
-import { couponUrl } from "@/lib/client";
 import { contactSalkaraMessage } from "@/lib/whatsapp";
 import { useCouponRealtime } from "@/lib/useCouponRealtime";
 import type { Coupon } from "@/lib/types";

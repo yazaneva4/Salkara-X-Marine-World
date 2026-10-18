@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Coupon, CouponStatus } from "./types";
+import type { Realtime, RealtimeChannel } from "ably";
 
 const COUPON_REALTIME_CHANNEL = "salkara-marine-coupons";
 const ABLY_BROWSER_SRC = "https://cdn.ably.com/lib/ably.min-2.js";
@@ -23,7 +24,7 @@ type AblyBrowser = {
   Realtime: new (options: {
     authUrl: string;
     recover: (lastConnectionDetails: unknown, callback: (shouldRecover: boolean) => void) => void;
-  }) => any;
+  }) => Realtime;
 };
 
 declare global {
@@ -83,8 +84,8 @@ function useRealtimeInvalidation(
     let disposed = false;
     let syncTimer: ReturnType<typeof setTimeout> | null = null;
     let fallbackTimer: ReturnType<typeof setInterval> | null = null;
-    let realtime: any = null;
-    let channel: any = null;
+    let realtime: Realtime | null = null;
+    let channel: RealtimeChannel | null = null;
     let connectionHandler: ((change: { current: string }) => void) | null = null;
     let messageHandler: (() => void) | null = null;
 
