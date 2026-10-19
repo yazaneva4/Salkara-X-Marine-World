@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Coupon, CouponStatus } from "./types";
 import type { Realtime, RealtimeChannel } from "ably";
+import { startLiveRefresh } from "./live-refresh";
 
 const COUPON_REALTIME_CHANNEL = "salkara-marine-coupons";
 const ABLY_BROWSER_SRC = "https://cdn.ably.com/lib/ably.min-2.js";
@@ -33,10 +34,11 @@ declare global {
   }
 }
 
-async function fetchCoupons(): Promise<Coupon[] | null> {
+async function fetchCoupons(signal: AbortSignal): Promise<Coupon[] | null> {
   const res = await fetch("/api/coupons", {
     cache: "no-store",
     credentials: "include",
+    signal,
   });
   if (!res.ok) return null;
   const data = (await res.json()) as { coupons?: Coupon[] };
@@ -71,7 +73,7 @@ function couponChannel(code: string): string {
 function useRealtimeInvalidation(
   channelName: string,
   authUrl: string,
-  onInvalidate: () => void | Promise<void>
+  onInvalidate: (signal: AbortSignal) => Promise<void>
 ): RealtimeState {
   const onInvalidateRef = useRef(onInvalidate);
   const [state, setState] = useState<RealtimeState>("connecting");
@@ -83,14 +85,16 @@ function useRealtimeInvalidation(
   useEffect(() => {
     let disposed = false;
     let syncTimer: ReturnType<typeof setTimeout> | null = null;
-    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+    const live = startLiveRefresh((signal) => onInvalidateRef.current(signal), {
+      visible: () => !document.hidden, online: () => navigator.onLine, intervalMs: FALLBACK_SYNC_MS,
+    });
     let realtime: Realtime | null = null;
     let channel: RealtimeChannel | null = null;
     let connectionHandler: ((change: { current: string }) => void) | null = null;
     let messageHandler: (() => void) | null = null;
 
     const runSync = () => {
-      if (!disposed) void onInvalidateRef.current();
+      if (!disposed) void live.refresh();
     };
 
     const scheduleSync = () => {
@@ -99,17 +103,6 @@ function useRealtimeInvalidation(
         syncTimer = null;
         runSync();
       }, 75);
-    };
-
-    const startFallback = () => {
-      if (!fallbackTimer) {
-        fallbackTimer = setInterval(runSync, FALLBACK_SYNC_MS);
-      }
-    };
-
-    const stopFallback = () => {
-      if (fallbackTimer) clearInterval(fallbackTimer);
-      fallbackTimer = null;
     };
 
     const handleResume = () => {
@@ -131,14 +124,11 @@ function useRealtimeInvalidation(
           if (disposed) return;
           if (change.current === "connected") {
             setState("connected");
-            stopFallback();
             scheduleSync();
           } else if (["disconnected", "connecting", "suspended"].includes(change.current)) {
             setState("reconnecting");
-            startFallback();
           } else if (["failed", "closed"].includes(change.current)) {
             setState("unavailable");
-            startFallback();
           }
         };
 
@@ -146,20 +136,20 @@ function useRealtimeInvalidation(
         // connected before the handler is registered.
         realtime.connection.on(connectionHandler);
         await channel.subscribe("coupon.changed", messageHandler);
+        if (disposed) return;
         if (realtime.connection.state === "connected") {
           setState("connected");
-          stopFallback();
           scheduleSync();
         }
       } catch {
         if (!disposed) {
           setState("unavailable");
-          startFallback();
         }
       }
     };
 
     window.addEventListener("online", scheduleSync);
+    window.addEventListener("focus", handleResume);
     document.addEventListener("visibilitychange", handleResume);
     scheduleSync();
     void startRealtime();
@@ -167,8 +157,9 @@ function useRealtimeInvalidation(
     return () => {
       disposed = true;
       if (syncTimer) clearTimeout(syncTimer);
-      stopFallback();
+      live.stop();
       window.removeEventListener("online", scheduleSync);
+      window.removeEventListener("focus", handleResume);
       document.removeEventListener("visibilitychange", handleResume);
       if (channel && messageHandler) channel.unsubscribe("coupon.changed", messageHandler);
       if (realtime && connectionHandler) realtime.connection.off(connectionHandler);
@@ -186,10 +177,10 @@ function useRealtimeInvalidation(
  * this client hook, preventing it from entering the Next.js client bundle.
  */
 export function useCouponRealtime(onSync: CouponSync): RealtimeState {
-  const sync = async () => {
+  const sync = async (signal: AbortSignal) => {
     try {
-      const coupons = await fetchCoupons();
-      if (coupons) onSync(coupons);
+      const coupons = await fetchCoupons(signal);
+      if (coupons && !signal.aborted) onSync(coupons);
     } catch {
       // Realtime reconnects or the fallback sync will retry.
     }
@@ -203,15 +194,15 @@ export function useCouponStatusRealtime(
   onSync: (coupon: CouponLiveStatus) => void
 ): RealtimeState {
   const normalizedCode = code.trim().toUpperCase();
-  const sync = async () => {
+  const sync = async (signal: AbortSignal) => {
     try {
       const res = await fetch(
         `/api/coupons/${encodeURIComponent(normalizedCode)}/public`,
-        { cache: "no-store" }
+        { cache: "no-store", signal }
       );
       if (!res.ok) return;
       const data = (await res.json()) as { coupon?: CouponLiveStatus };
-      if (data.coupon) onSync(data.coupon);
+      if (data.coupon && !signal.aborted) onSync(data.coupon);
     } catch {
       // Realtime reconnects or the fallback sync will retry.
     }

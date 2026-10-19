@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Poppins, Great_Vibes } from "next/font/google";
 import "./globals.css";
 
@@ -28,9 +29,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${poppins.variable} ${script.variable}`}>
+    <html data-app-revision={process.env.VERCEL_GIT_COMMIT_SHA || ""} lang="en" className={`${poppins.variable} ${script.variable}`}>
       <body className="min-h-screen bg-slate-100 font-sans text-slate-800 antialiased">
         {children}
+        <Script src="/app-updates.js" strategy="afterInteractive" />
       </body>
     </html>
   );

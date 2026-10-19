@@ -178,3 +178,7 @@ it does not turn Ably into the database.
 - `ably` for realtime pub/sub transport
 - `jose` for signed session cookies
 - `qrcode.react` for the coupon QR code
+
+## Live updates
+
+Ably events refresh coupon data immediately. A visible, online page also reconciles every 15 seconds, even if a socket stalls; focus and reconnect refresh the page data. Requests are coalesced and aborted when their view closes. A newer deployment is detected within 60 seconds or on focus/reconnect and offers a reload; open forms are never reloaded automatically.
