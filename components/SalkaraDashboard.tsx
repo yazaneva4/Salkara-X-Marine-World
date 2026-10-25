@@ -3,7 +3,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import StatusBadge from "./StatusBadge";
-import WhatsAppButton from "./WhatsAppButton";
+import SendToButton from "./SendToButton";
 import { couponUrl, defaultValidUntil } from "@/lib/client";
 import { customerCouponMessage, completedMessage } from "@/lib/whatsapp";
 import { useCouponRealtime } from "@/lib/useCouponRealtime";
@@ -120,7 +120,7 @@ export default function SalkaraDashboard({
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                WhatsApp number (with country code)
+                Phone / WhatsApp number (with country code)
               </label>
               <input
                 value={whatsapp}
@@ -177,10 +177,10 @@ export default function SalkaraDashboard({
               ✔ Coupon {justIssued.code} created for {justIssued.name}
             </div>
             <p className="mt-1 text-xs text-emerald-700">
-              Send it to the customer on WhatsApp, or open it to print.
+              Send it to the customer, or open it to print.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <WhatsAppButton
+              <SendToButton
                 number={justIssued.whatsapp}
                 message={customerCouponMessage(
                   justIssued.name,
@@ -262,7 +262,7 @@ export default function SalkaraDashboard({
                       </button>
                     )}
                     {c.status === "completed" ? (
-                      <WhatsAppButton
+                      <SendToButton
                         number={c.whatsapp}
                         message={completedMessage(c.name, c.code)}
                         label="Thank you"
@@ -270,7 +270,7 @@ export default function SalkaraDashboard({
                         size="sm"
                       />
                     ) : (
-                      <WhatsAppButton
+                      <SendToButton
                         number={c.whatsapp}
                         message={customerCouponMessage(
                           c.name,
