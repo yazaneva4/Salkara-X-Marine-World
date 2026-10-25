@@ -57,3 +57,12 @@ export function completedMessage(name: string, code: string): string {
     `Thank you for visiting Salkara & CISO Marine World!`
   );
 }
+
+/** Apology Salkara staff can send when a coupon has been deleted. */
+export function couponDeletedMessage(name: string, code: string): string {
+  const hi = name ? `Hello ${name}, ` : "Hello, ";
+  return (
+    `${hi}we are sorry: your Salkara x CISO Marine World coupon (${code}) has been cancelled and can no longer be used. ` +
+    `We apologise for any inconvenience. Please contact us if you have any questions.`
+  );
+}
