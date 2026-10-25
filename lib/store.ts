@@ -295,6 +295,17 @@ export async function updateCoupon(
   });
 }
 
+/** Permanently remove a coupon. Throws "Coupon not found" if it does not exist. */
+export async function deleteCoupon(code: string): Promise<Coupon> {
+  return mutateCoupons(all => {
+    const needle = code.trim().toLowerCase();
+    const idx = all.findIndex(c => c.code.toLowerCase() === needle);
+    if (idx === -1) throw new Error("Coupon not found");
+    const [removed] = all.splice(idx, 1);
+    return removed;
+  });
+}
+
 export function isStorageConfigured(): boolean {
   return useBlob;
 }
