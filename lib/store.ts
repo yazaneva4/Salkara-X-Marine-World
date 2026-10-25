@@ -253,16 +253,24 @@ function mutateCoupons<T>(mutate: (coupons: Coupon[]) => T): Promise<T> {
   error instanceof BlobPreconditionFailedError ||
   (error instanceof Error && /already exists|precondition failed|etag mismatch/i.test(error.message));
 const run = async () => {
+  const used: (string | null)[] = [];
+  const tracked = (c: Coupon[], e: string | null) => {
+    used.push(e);
+    return writeAll(c, e);
+  };
   try {
-    return await updateSnapshot(readSnapshot, writeAll, mutate, isConflict);
+    return await updateSnapshot(readSnapshot, tracked, mutate, isConflict);
   } catch (error) {
-    // The ETag check can get stuck rejecting every write ("ETag mismatch") even
-    // when nothing else changed, which locks staff out of saving. After the
-    // checked retries fail, overwrite once (last write wins), as this app did
-    // before conditional writes. A taken coupon code ("already exists") is
-    // still reported as before.
+    // The ETag check can get stuck rejecting every write ("ETag mismatch")
+    // even when nothing else changed, which locks staff out of saving. That is
+    // recognisable: every checked attempt used the same ETag, so nobody else
+    // wrote in between, yet the write was still refused. Only then overwrite
+    // once (last write wins). If the ETag kept changing, other writers really
+    // are colliding, so report the failure instead of silently dropping their
+    // changes. A taken coupon code ("already exists") is reported as before.
     const taken = error instanceof Error && /already exists/i.test(error.message);
-    if (taken || !isConflict(error)) throw error;
+    const stuck = used.length > 1 && used[0] !== null && used.every((e) => e === used[0]);
+    if (taken || !isConflict(error) || !stuck) throw error;
     return updateSnapshot(readSnapshot, (c, e) => writeAll(c, e, true), mutate, () => false);
   }
 };
