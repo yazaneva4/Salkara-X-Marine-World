@@ -192,7 +192,7 @@ async function readSnapshot(): Promise<Snapshot> {
   throw lastError;
 }
 
-async function writeAll(coupons: Coupon[], etag: string | null): Promise<void> {
+async function writeAll(coupons: Coupon[], etag: string | null, force = false): Promise<void> {
   const json = JSON.stringify(coupons);
   if (!useBlob) {
     // On Vercel the filesystem is read-only, so local-file mode can't work.
@@ -224,8 +224,8 @@ async function writeAll(coupons: Coupon[], etag: string | null): Promise<void> {
       await put(DB_PATHNAME, body, {
         access,
         addRandomSuffix: false,
-        allowOverwrite: etag !== null,
-        ifMatch: etag ?? undefined,
+        allowOverwrite: force || etag !== null,
+        ifMatch: force ? undefined : etag ?? undefined,
         contentType: "application/octet-stream",
         cacheControlMaxAge: 0,
         token,
@@ -249,9 +249,23 @@ async function readAll(): Promise<Coupon[]> {
 // the local development file, which has no conditional-write API.
 let pendingWrite: Promise<unknown> = Promise.resolve();
 function mutateCoupons<T>(mutate: (coupons: Coupon[]) => T): Promise<T> {
-  const run = () => updateSnapshot(readSnapshot, writeAll, mutate, error =>
-    error instanceof BlobPreconditionFailedError ||
-    (error instanceof Error && /already exists/i.test(error.message)));
+  const isConflict = (error: unknown) =>
+  error instanceof BlobPreconditionFailedError ||
+  (error instanceof Error && /already exists|precondition failed|etag mismatch/i.test(error.message));
+const run = async () => {
+  try {
+    return await updateSnapshot(readSnapshot, writeAll, mutate, isConflict);
+  } catch (error) {
+    // The ETag check can get stuck rejecting every write ("ETag mismatch") even
+    // when nothing else changed, which locks staff out of saving. After the
+    // checked retries fail, overwrite once (last write wins), as this app did
+    // before conditional writes. A taken coupon code ("already exists") is
+    // still reported as before.
+    const taken = error instanceof Error && /already exists/i.test(error.message);
+    if (taken || !isConflict(error)) throw error;
+    return updateSnapshot(readSnapshot, (c, e) => writeAll(c, e, true), mutate, () => false);
+  }
+};
   const next = pendingWrite.then(run, run);
   pendingWrite = next.catch(() => {});
   return next;
