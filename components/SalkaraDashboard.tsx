@@ -86,6 +86,27 @@ export default function SalkaraDashboard({
     }
   }
 
+  async function removeCoupon(code: string) {
+    if (!window.confirm(`Delete coupon ${code}? This cannot be undone.`)) return;
+    setRowBusy(code);
+    try {
+      const res = await fetch(`/api/coupons/${encodeURIComponent(code)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCoupons((prev) => prev.filter((c) => c.code !== code));
+        setJustIssued((prev) => (prev && prev.code === code ? null : prev));
+      } else {
+        alert(data.error || "Could not delete coupon");
+      }
+    } catch {
+      alert("Network error, please try again");
+    } finally {
+      setRowBusy(null);
+    }
+  }
+
   const realtimeLabel =
     realtimeState === "connected"
       ? "Live"
@@ -283,6 +304,14 @@ export default function SalkaraDashboard({
                         size="sm"
                       />
                     )}
+              <button
+                onClick={() => removeCoupon(c.code)}
+                disabled={rowBusy === c.code}
+                aria-label={`Delete coupon ${c.code}`}
+                className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-60"
+              >
+                Delete
+              </button>
                   </div>
                 </div>
               ))}
