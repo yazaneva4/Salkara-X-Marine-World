@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth";
 import { createCoupon, listCoupons } from "@/lib/store";
 import { publishCouponChanged } from "@/lib/realtime";
-import { normalizeWhatsApp, validCouponDate } from "@/lib/coupon";
+import { couponExpired, normalizeWhatsApp, validCouponDate } from "@/lib/coupon";
 import { generateCode } from "@/lib/code";
 import type { Coupon } from "@/lib/types";
 
@@ -64,6 +64,12 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+if (couponExpired(validUntil)) {
+  return NextResponse.json(
+    { error: "The 'valid until' date has already passed" },
+    { status: 400 }
+  );
+}
 
   // Generate a unique code, retrying ONLY on the astronomically unlikely code
   // collision. Any other error (e.g. storage misconfiguration) is surfaced so
