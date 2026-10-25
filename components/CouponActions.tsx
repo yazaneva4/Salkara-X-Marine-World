@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { couponExpired } from "@/lib/coupon";
 import WhatsAppButton from "./WhatsAppButton";
+import SendToButton from "./SendToButton";
 import { CheckIcon } from "./Icons";
 import type { CouponStatus, Role } from "@/lib/types";
 import {
@@ -181,7 +182,7 @@ export default function CouponActions({
                 ✔ Completed — food discount applied{salkaraAt ? ` on ${fmt(salkaraAt)}` : ""}.
               </p>
               {customerWhatsapp && (
-                <WhatsAppButton
+                <SendToButton
                   number={customerWhatsapp}
                   message={completedMessage(name, code)}
                   label="Send thank-you to customer"
@@ -196,7 +197,7 @@ export default function CouponActions({
       {/* Staff sharing tools */}
       {role && customerWhatsapp && status !== "completed" && !expired && (
         <div className="flex flex-wrap gap-2">
-          <WhatsAppButton
+          <SendToButton
             number={customerWhatsapp}
             message={customerCouponMessage(name, code, couponUrl, validUntil)}
             label="Send coupon to customer"
