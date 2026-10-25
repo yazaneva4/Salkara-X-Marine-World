@@ -7,6 +7,7 @@ import { registerHooks } from 'node:module';
 const stub = `export class BlobPreconditionFailedError extends Error {};
 export const list = async () => ({ blobs: [] });
 export const get = (...args) => globalThis.couponBlob.get(...args);
+export const head = (...args) => globalThis.couponBlob.head(...args);
 export const put = (...args) => globalThis.couponBlob.put(...args);`;
 const blobUrl = 'data:text/javascript,' + encodeURIComponent(stub);
 registerHooks({ resolve(name, context, next) {
@@ -27,6 +28,7 @@ const coupon = code => ({ code, name: code, issuedAt: '2026-10-15T00:00:00Z', va
 test('independent coupon stores use ETags and preserve concurrent encrypted writes', async () => {
   let version = 0, data = null, conflicts = 0;
   globalThis.couponBlob = {
+head: async () => { if (!data) throw new Error('The requested blob does not exist'); return { etag: String(version) }; },
     get: async (_path, options) => {
       assert.equal(options.useCache, false);
       return data ? { statusCode: 200, stream: new Response(data).body, blob: { etag: String(version) } } : null;
@@ -47,6 +49,7 @@ test('independent coupon stores use ETags and preserve concurrent encrypted writ
 test('an encrypted store that cannot be decrypted is never overwritten', async () => {
   let writes = 0;
   globalThis.couponBlob = {
+head: async () => ({ etag: 'bad' }),
     get: async () => ({ statusCode: 200, stream: new Response('corrupt').body, blob: { etag: 'bad' } }),
     put: async () => { writes++; },
   };
