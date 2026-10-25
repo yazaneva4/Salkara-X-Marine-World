@@ -2,7 +2,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { get, head, list, put, BlobPreconditionFailedError } from "@vercel/blob";
+import { get, list, put, BlobPreconditionFailedError } from "@vercel/blob";
 import { appConfig } from "./config";
 import type { Coupon } from "./types";
 import { updateSnapshot } from "./storage-update";
@@ -156,21 +156,7 @@ function parseCoupons(json: string): Coupon[] {
   }
   return value as Coupon[];
 }
-/**
- * The blob's current ETag from the metadata API. put({ ifMatch }) expects this
- * form (it is what head() returns); get() returns the raw HTTP ETag header,
- * which does not always match it, so every conditional write was rejected.
- */
-async function blobEtag(token: string): Promise<string | null> {
-  try {
-    return (await head(DB_PATHNAME, { token })).etag;
-  } catch (err) {
-    if (isNotFound(err)) return null;
-    throw err;
-  }
-}
-
-async function readSnapshot(attempt = 0): Promise<Snapshot> {
+async function readSnapshot(): Promise<Snapshot> {
   if (!useBlob) {
     try {
       const raw = await fs.readFile(LOCAL_PATH, "utf8");
@@ -184,8 +170,6 @@ async function readSnapshot(attempt = 0): Promise<Snapshot> {
   const token = await resolveWorkingToken();
 
 
-const etagBefore = await blobEtag(token);
-
   // Read the encrypted blob directly with get() — works for both public and
   // private stores. useCache:false reads the latest content (read-after-write
   // consistency). Tries each access mode until the store's mode matches.
@@ -197,15 +181,7 @@ const etagBefore = await blobEtag(token);
       if (!result) return { coupons: [], etag: null };
       if (result.statusCode !== 200 || !result.stream) throw new Error("Coupon storage read failed.");
       const buf = Buffer.from(await new Response(result.stream).arrayBuffer());
-      const coupons = parseCoupons(decrypt(buf));
-const etagAfter = await blobEtag(token);
-// The blob changed while it was being read: the data and the ETag no longer
-// belong together, so read again instead of risking a lost update.
-if (etagAfter !== etagBefore) {
-if (attempt < 3) return readSnapshot(attempt + 1);
-throw new Error("Coupon storage kept changing while it was being read; try again.");
-}
-return { coupons, etag: etagAfter };
+      return { coupons: parseCoupons(decrypt(buf)), etag: result.blob.etag };
     } catch (err) {
       lastError = err;
       if (isAccessMismatch(err)) continue; // wrong access mode — try the other
