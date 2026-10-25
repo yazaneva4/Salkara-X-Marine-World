@@ -5,7 +5,7 @@ import Link from "next/link";
 import StatusBadge from "./StatusBadge";
 import SendToButton from "./SendToButton";
 import { couponUrl, defaultValidUntil } from "@/lib/client";
-import { customerCouponMessage, completedMessage } from "@/lib/whatsapp";
+import { customerCouponMessage, completedMessage, couponDeletedMessage } from "@/lib/whatsapp";
 import { useCouponRealtime } from "@/lib/useCouponRealtime";
 import type { Coupon } from "@/lib/types";
 
@@ -22,6 +22,7 @@ export default function SalkaraDashboard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justIssued, setJustIssued] = useState<Coupon | null>(null);
+  const [deleted, setDeleted] = useState<{ code: string; name: string; whatsapp: string } | null>(null);
   const [query, setQuery] = useState("");
   const [rowBusy, setRowBusy] = useState<string | null>(null);
 
@@ -46,6 +47,7 @@ export default function SalkaraDashboard({
     setBusy(true);
     setError(null);
     setJustIssued(null);
+    setDeleted(null);
     try {
       const res = await fetch("/api/coupons", {
         method: "POST",
@@ -95,7 +97,9 @@ export default function SalkaraDashboard({
       });
       const data = await res.json();
       if (res.ok) {
+        const gone = coupons.find((c) => c.code === code);
         setCoupons((prev) => prev.filter((c) => c.code !== code));
+        if (gone) setDeleted({ code: gone.code, name: gone.name, whatsapp: gone.whatsapp });
         setJustIssued((prev) => (prev && prev.code === code ? null : prev));
       } else {
         alert(data.error || "Could not delete coupon");
@@ -220,6 +224,31 @@ export default function SalkaraDashboard({
             </div>
           </div>
         )}
+
+            {deleted && (
+              <div role="status" className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                <div className="text-sm font-bold text-amber-800">
+                  Coupon {deleted.code} was deleted. Sorry for any inconvenience.
+                </div>
+                <p className="mt-1 text-xs text-amber-700">
+                  Let {deleted.name || "the customer"} know with an apology message.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <SendToButton
+                    number={deleted.whatsapp}
+                    message={couponDeletedMessage(deleted.name, deleted.code)}
+                    label="Send apology to customer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setDeleted(null)}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
       </section>
 
       {/* Coupon list */}
