@@ -24,6 +24,7 @@ interface Props {
   role: Role | null;
   couponUrl: string;
   customerWhatsapp?: string; // only provided to signed-in staff
+  customerEmail?: string; // Google Chat address, staff only
 }
 
 const SALKARA_WA = process.env.NEXT_PUBLIC_SALKARA_WHATSAPP || "";
@@ -47,6 +48,7 @@ export default function CouponActions({
   role,
   couponUrl,
   customerWhatsapp,
+  customerEmail,
 }: Props) {
   const [status, setStatus] = useState<CouponStatus>(initialStatus);
   const [marineAt, setMarineAt] = useState<string | null>(marineUsedAt);
@@ -184,6 +186,8 @@ export default function CouponActions({
               {customerWhatsapp !== undefined && (
                 <SendToButton
                   number={customerWhatsapp}
+              defaultChannel={customerEmail && !customerWhatsapp ? "google-chat" : undefined}
+              defaultEmail={customerEmail}
                   message={completedMessage(name, code)}
                   label="Send thank-you to customer"
                   variant="solid"
@@ -199,6 +203,8 @@ export default function CouponActions({
         <div className="flex flex-wrap gap-2">
           <SendToButton
             number={customerWhatsapp}
+              defaultChannel={customerEmail && !customerWhatsapp ? "google-chat" : undefined}
+              defaultEmail={customerEmail}
             message={customerCouponMessage(name, code, couponUrl, validUntil)}
             label="Send coupon to customer"
             variant="solid"
