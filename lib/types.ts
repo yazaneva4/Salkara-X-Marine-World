@@ -28,10 +28,12 @@ export interface Coupon {
   salkaraUsedAt: string | null;
   salkaraUsedBy: string | null;
   notes?: string;
+  /** Google Chat address for sending the coupon. Staff only, never on the public page. */
+  email?: string;
 }
 
 export interface PublicCoupon
-  extends Omit<Coupon, "whatsapp" | "issuedBy" | "marineUsedBy" | "salkaraUsedBy"> {
+  extends Omit<Coupon, "whatsapp" | "email" | "issuedBy" | "marineUsedBy" | "salkaraUsedBy"> {
   // A trimmed coupon that is safe to expose on the public coupon page.
   whatsappMasked: string;
 }
