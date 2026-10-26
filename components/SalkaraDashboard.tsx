@@ -7,6 +7,7 @@ import SendToButton from "./SendToButton";
 import { couponUrl, defaultValidUntil } from "@/lib/client";
 import { customerCouponMessage, completedMessage, couponDeletedMessage } from "@/lib/whatsapp";
 import { useCouponRealtime } from "@/lib/useCouponRealtime";
+import { CHANNELS, isEmail, type Channel } from "@/lib/messaging";
 import type { Coupon } from "@/lib/types";
 
 export default function SalkaraDashboard({
@@ -23,6 +24,9 @@ export default function SalkaraDashboard({
   const [error, setError] = useState<string | null>(null);
   const [justIssued, setJustIssued] = useState<Coupon | null>(null);
   const [deleted, setDeleted] = useState<{ code: string; name: string; whatsapp: string } | null>(null);
+  const [sendVia, setSendVia] = useState<Channel>("whatsapp");
+  const [sendEmail, setSendEmail] = useState("");
+  const [issuedVia, setIssuedVia] = useState<{ channel: Channel; email: string }>({ channel: "whatsapp", email: "" });
   const [query, setQuery] = useState("");
   const [rowBusy, setRowBusy] = useState<string | null>(null);
 
@@ -44,6 +48,10 @@ export default function SalkaraDashboard({
 
   async function issue(e: React.FormEvent) {
     e.preventDefault();
+    if (sendVia === "google-chat" && !isEmail(sendEmail)) {
+      setError("Enter the customer's email address to send via Google Chat.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setJustIssued(null);
@@ -61,9 +69,11 @@ export default function SalkaraDashboard({
       }
       setCoupons((prev) => [data.coupon, ...prev.filter((c) => c.code !== data.coupon.code)]);
       setJustIssued(data.coupon);
+      setIssuedVia({ channel: sendVia, email: sendEmail });
       setName("");
       setWhatsapp("");
       setNotes("");
+      setSendEmail("");
     } catch {
       setError("Network error, please try again");
     } finally {
@@ -156,6 +166,42 @@ export default function SalkaraDashboard({
                 required
               />
             </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Send coupon via
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {CHANNELS.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      aria-pressed={c.id === sendVia}
+                      onClick={() => setSendVia(c.id)}
+                      className={`rounded-lg border px-2 py-2 text-xs font-semibold ${
+                        c.id === sendVia
+                          ? "border-salkara bg-salkara/10 text-salkara-dark"
+                          : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {CHANNELS.find((c) => c.id === sendVia)?.hint}
+                </p>
+                {sendVia === "google-chat" && (
+                  <input
+                    type="email"
+                    value={sendEmail}
+                    onChange={(e) => setSendEmail(e.target.value)}
+                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-salkara focus:outline-none"
+                    placeholder="Customer email, e.g. name@gmail.com"
+                    required
+                  />
+                )}
+              </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Valid until
@@ -206,6 +252,10 @@ export default function SalkaraDashboard({
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <SendToButton
+                key={justIssued.code}
+                defaultChannel={issuedVia.channel}
+                defaultEmail={issuedVia.email}
+                defaultOpen
                 number={justIssued.whatsapp}
                 message={customerCouponMessage(
                   justIssued.name,
