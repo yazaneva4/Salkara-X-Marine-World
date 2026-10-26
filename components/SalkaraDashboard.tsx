@@ -60,7 +60,7 @@ export default function SalkaraDashboard({
       const res = await fetch("/api/coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, whatsapp, validUntil, notes }),
+        body: JSON.stringify({ name, whatsapp, validUntil, notes, channel: sendVia }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -155,7 +155,7 @@ export default function SalkaraDashboard({
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Phone / WhatsApp number (with country code)
+                Phone / WhatsApp number (with country code){sendVia === "google-chat" ? " - optional for Google Chat" : ""}
               </label>
               <input
                 value={whatsapp}
@@ -163,7 +163,7 @@ export default function SalkaraDashboard({
                 inputMode="tel"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-salkara focus:outline-none"
                 placeholder="e.g. 9665XXXXXXXX"
-                required
+                required={sendVia !== "google-chat"}
               />
             </div>
 
@@ -347,7 +347,7 @@ export default function SalkaraDashboard({
                       <StatusBadge status={c.status} />
                     </div>
                     <div className="truncate text-sm text-slate-600">
-                      {c.name} · {c.whatsapp}
+                      {c.name}{c.whatsapp ? ` · ${c.whatsapp}` : ""}
                     </div>
                   </div>
 
