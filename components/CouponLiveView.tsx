@@ -20,6 +20,7 @@ interface Props {
   role: Role | null;
   couponUrl: string;
   customerWhatsapp?: string;
+  customerEmail?: string;
 }
 
 export default function CouponLiveView(props: Props) {
@@ -66,6 +67,7 @@ export default function CouponLiveView(props: Props) {
           role={props.role}
           couponUrl={props.couponUrl}
           customerWhatsapp={props.customerWhatsapp}
+customerEmail={props.customerEmail}
         />
       </div>
     </>
