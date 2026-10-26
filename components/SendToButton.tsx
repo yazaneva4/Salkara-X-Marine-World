@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useId, useState } from "react";
+import React, { useId, useRef, useState } from "react";
 import {
   CHANNELS,
   googleChatLink,
@@ -46,6 +46,23 @@ export default function SendToButton({
   const [email, setEmail] = useState(defaultEmail);
   const emailId = useId();
 
+  // The menu can be dragged by its header, so it never has to cover what the
+  // staff member is looking at. It returns to its normal place when reopened.
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const drag = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+  function startDrag(e: React.PointerEvent<HTMLDivElement>) {
+    drag.current = { startX: e.clientX, startY: e.clientY, baseX: offset.x, baseY: offset.y };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function moveDrag(e: React.PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    if (!d) return;
+    setOffset({ x: d.baseX + e.clientX - d.startX, y: d.baseY + e.clientY - d.startY });
+  }
+  function endDrag() {
+    drag.current = null;
+  }
+
   const base =
     "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors focus-visible:outline focus-visible:outline-2";
   const sizes = size === "sm" ? "px-3 py-1.5 text-sm" : "px-4 py-2.5 text-sm";
@@ -71,7 +88,10 @@ export default function SendToButton({
         type="button"
         aria-expanded={open}
         aria-haspopup="true"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setOffset({ x: 0, y: 0 });
+          setOpen((v) => !v);
+        }}
         className={`${base} ${sizes} ${variants[variant]}`}
       >
         {label}
@@ -82,9 +102,20 @@ export default function SendToButton({
         <div
           role="group"
           aria-label="Send to"
+          style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
           className="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-lg"
         >
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Send to</div>
+          <div
+            onPointerDown={startDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            title="Drag to move"
+            className="-mx-3 -mt-3 mb-1 flex cursor-grab touch-none select-none items-center justify-between rounded-t-xl bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 active:cursor-grabbing"
+          >
+            <span>Send to</span>
+            <span aria-hidden="true" className="normal-case tracking-normal text-slate-400">⠿ drag to move</span>
+          </div>
           <div className="mt-2 grid grid-cols-2 gap-1.5">
             {CHANNELS.map((c) => (
               <button
