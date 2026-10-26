@@ -181,7 +181,7 @@ export default function CouponActions({
               <p className="text-sm text-emerald-700">
                 ✔ Completed — food discount applied{salkaraAt ? ` on ${fmt(salkaraAt)}` : ""}.
               </p>
-              {customerWhatsapp && (
+              {customerWhatsapp !== undefined && (
                 <SendToButton
                   number={customerWhatsapp}
                   message={completedMessage(name, code)}
@@ -195,7 +195,7 @@ export default function CouponActions({
       )}
 
       {/* Staff sharing tools */}
-      {role && customerWhatsapp && status !== "completed" && !expired && (
+      {role && customerWhatsapp !== undefined && status !== "completed" && !expired && (
         <div className="flex flex-wrap gap-2">
           <SendToButton
             number={customerWhatsapp}
