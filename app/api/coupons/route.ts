@@ -4,6 +4,7 @@ import { createCoupon, listCoupons } from "@/lib/store";
 import { publishCouponChanged } from "@/lib/realtime";
 import { couponExpired, normalizeWhatsApp, validCouponDate } from "@/lib/coupon";
 import { generateCode } from "@/lib/code";
+import { isEmail } from "@/lib/messaging";
 import type { Coupon } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { name?: string; whatsapp?: string; validUntil?: string; notes?: string; channel?: string };
+  let body: { name?: string; whatsapp?: string; validUntil?: string; notes?: string; channel?: string; email?: string };
   try {
     body = await req.json();
   } catch {
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
   const notes = (body.notes || "").trim();
 // Google Chat coupons are sent to an email address, so a phone number is optional there.
 const chatOnly = body.channel === "google-chat";
+const email = (typeof body.email === "string" ? body.email : "").trim().toLowerCase();
 
   if (!name) {
     return NextResponse.json({ error: "Customer name is required" }, { status: 400 });
@@ -60,6 +62,12 @@ const chatOnly = body.channel === "google-chat";
       { status: 400 }
     );
   }
+if (email && !isEmail(email)) {
+  return NextResponse.json({ error: "A valid email address is required" }, { status: 400 });
+}
+if (chatOnly && !email) {
+  return NextResponse.json({ error: "The customer's email is required for Google Chat" }, { status: 400 });
+}
   if (!validCouponDate(validUntil)) {
     return NextResponse.json(
       { error: "A valid 'valid until' date is required" },
@@ -92,6 +100,7 @@ if (couponExpired(validUntil)) {
       salkaraUsedAt: null,
       salkaraUsedBy: null,
       notes: notes || undefined,
+email: email || undefined,
     };
     try {
       coupon = await createCoupon(candidate);
