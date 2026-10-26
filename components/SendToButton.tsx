@@ -16,6 +16,12 @@ interface Props {
   variant?: "solid" | "outline" | "soft";
   size?: "sm" | "md";
   className?: string;
+  /** Pre-select an app, e.g. the one chosen when the coupon was issued. */
+  defaultChannel?: Channel;
+  /** Pre-fill the Google Chat email. */
+  defaultEmail?: string;
+  /** Start with the menu open. */
+  defaultOpen?: boolean;
 }
 
 /**
@@ -31,10 +37,13 @@ export default function SendToButton({
   variant = "solid",
   size = "md",
   className = "",
+  defaultChannel = "whatsapp",
+  defaultEmail = "",
+  defaultOpen = false,
 }: Props) {
-  const [open, setOpen] = useState(false);
-  const [channel, setChannel] = useState<Channel>("whatsapp");
-  const [email, setEmail] = useState("");
+  const [open, setOpen] = useState(defaultOpen);
+  const [channel, setChannel] = useState<Channel>(defaultChannel);
+  const [email, setEmail] = useState(defaultEmail);
   const emailId = useId();
 
   const base =
