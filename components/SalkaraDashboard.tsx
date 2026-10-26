@@ -42,7 +42,8 @@ export default function SalkaraDashboard({
       (c) =>
         c.code.toLowerCase().includes(q) ||
         c.name.toLowerCase().includes(q) ||
-        c.whatsapp.includes(q)
+        c.whatsapp.includes(q) ||
+        (c.email || "").toLowerCase().includes(q)
     );
   }, [coupons, query]);
 
@@ -60,7 +61,7 @@ export default function SalkaraDashboard({
       const res = await fetch("/api/coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, whatsapp, validUntil, notes, channel: sendVia }),
+        body: JSON.stringify({ name, whatsapp, validUntil, notes, channel: sendVia, email: sendVia === "google-chat" ? sendEmail : "" }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -347,7 +348,7 @@ export default function SalkaraDashboard({
                       <StatusBadge status={c.status} />
                     </div>
                     <div className="truncate text-sm text-slate-600">
-                      {c.name}{c.whatsapp ? ` · ${c.whatsapp}` : ""}
+                      {[c.name, c.whatsapp, c.email].filter(Boolean).join(" · ")}
                     </div>
                   </div>
 
@@ -364,6 +365,8 @@ export default function SalkaraDashboard({
                     {c.status === "completed" ? (
                       <SendToButton
                         number={c.whatsapp}
+                  defaultChannel={c.email && !c.whatsapp ? "google-chat" : undefined}
+                  defaultEmail={c.email}
                         message={completedMessage(c.name, c.code)}
                         label="Thank you"
                         variant="soft"
@@ -372,6 +375,8 @@ export default function SalkaraDashboard({
                     ) : (
                       <SendToButton
                         number={c.whatsapp}
+                  defaultChannel={c.email && !c.whatsapp ? "google-chat" : undefined}
+                  defaultEmail={c.email}
                         message={customerCouponMessage(
                           c.name,
                           c.code,
