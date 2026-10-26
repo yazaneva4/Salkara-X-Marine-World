@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { name?: string; whatsapp?: string; validUntil?: string; notes?: string };
+  let body: { name?: string; whatsapp?: string; validUntil?: string; notes?: string; channel?: string };
   try {
     body = await req.json();
   } catch {
@@ -48,11 +48,13 @@ export async function POST(req: NextRequest) {
   const whatsapp = normalizeWhatsApp(body.whatsapp || "");
   const validUntil = (body.validUntil || "").trim();
   const notes = (body.notes || "").trim();
+// Google Chat coupons are sent to an email address, so a phone number is optional there.
+const chatOnly = body.channel === "google-chat";
 
   if (!name) {
     return NextResponse.json({ error: "Customer name is required" }, { status: 400 });
   }
-  if (whatsapp.length < 8) {
+  if (whatsapp.length < 8 && !(whatsapp.length === 0 && chatOnly)) {
     return NextResponse.json(
       { error: "A valid WhatsApp number (with country code) is required" },
       { status: 400 }
