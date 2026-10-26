@@ -83,6 +83,7 @@ export default async function CouponPage({
           salkaraUsedAt={coupon.salkaraUsedAt}
           role={session?.role ?? null}
           customerWhatsapp={isStaff ? coupon.whatsapp : undefined}
+customerEmail={isStaff ? coupon.email : undefined}
         />
       </div>
     </main>
