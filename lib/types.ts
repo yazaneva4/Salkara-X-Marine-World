@@ -1,3 +1,5 @@
+import type { Channel } from "./messaging";
+
 export type Role = "salkara" | "marine";
 
 export interface Session {
@@ -30,6 +32,8 @@ export interface Coupon {
   notes?: string;
   /** Google Chat address for sending the coupon. Staff only, never on the public page. */
   email?: string;
+  /** The app the coupon is meant to be sent through; the send menu opens on it. */
+  channel?: Channel;
 }
 
 export interface PublicCoupon
