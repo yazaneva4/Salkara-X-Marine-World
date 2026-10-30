@@ -4,7 +4,7 @@ import { createCoupon, listCoupons } from "@/lib/store";
 import { publishCouponChanged } from "@/lib/realtime";
 import { couponExpired, normalizeWhatsApp, validCouponDate } from "@/lib/coupon";
 import { generateCode } from "@/lib/code";
-import { isEmail } from "@/lib/messaging";
+import { CHANNELS, isEmail } from "@/lib/messaging";
 import type { Coupon } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -101,6 +101,7 @@ if (couponExpired(validUntil)) {
       salkaraUsedBy: null,
       notes: notes || undefined,
 email: email || undefined,
+channel: CHANNELS.find((c) => c.id === body.channel)?.id,
     };
     try {
       coupon = await createCoupon(candidate);
