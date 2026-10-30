@@ -292,7 +292,22 @@ export async function getCoupon(code: string): Promise<Coupon | null> {
 
 export async function createCoupon(coupon: Coupon): Promise<Coupon> {
   return mutateCoupons(all => {
-    if (all.some(c => c.code.toLowerCase() === coupon.code.toLowerCase())) {
+    // A retry of the same form submit (lost reply, double click) returns the
+  // coupon it already created instead of making a second one. The check runs
+  // inside the locked read-modify-write, so concurrent retries cannot both pass.
+  if (coupon.requestId) {
+    const same = all.find(
+      (c) =>
+        c.requestId === coupon.requestId &&
+        c.name === coupon.name &&
+        c.whatsapp === coupon.whatsapp &&
+        (c.email ?? "") === (coupon.email ?? "") &&
+        c.validUntil === coupon.validUntil &&
+        (c.notes ?? "") === (coupon.notes ?? "")
+    );
+    if (same) return same;
+  }
+  if (all.some(c => c.code.toLowerCase() === coupon.code.toLowerCase())) {
       throw new Error("A coupon with this code already exists");
     }
     all.push(coupon);
