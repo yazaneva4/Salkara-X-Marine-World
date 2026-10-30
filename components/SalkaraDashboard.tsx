@@ -347,7 +347,7 @@ export default function SalkaraDashboard({
                       </Link>
                       <StatusBadge status={c.status} />
                     </div>
-                    <div className="truncate text-sm text-slate-600">
+                    <div className="break-words text-sm text-slate-600">
                       {[c.name, c.whatsapp, c.email].filter(Boolean).join(" · ")}
                     </div>
                   </div>
@@ -365,7 +365,7 @@ export default function SalkaraDashboard({
                     {c.status === "completed" ? (
                       <SendToButton
                         number={c.whatsapp}
-                  defaultChannel={c.email && !c.whatsapp ? "google-chat" : undefined}
+                  defaultChannel={c.channel ?? (c.email && !c.whatsapp ? "google-chat" : undefined)}
                   defaultEmail={c.email}
                         message={completedMessage(c.name, c.code)}
                         label="Thank you"
@@ -375,7 +375,7 @@ export default function SalkaraDashboard({
                     ) : (
                       <SendToButton
                         number={c.whatsapp}
-                  defaultChannel={c.email && !c.whatsapp ? "google-chat" : undefined}
+                  defaultChannel={c.channel ?? (c.email && !c.whatsapp ? "google-chat" : undefined)}
                   defaultEmail={c.email}
                         message={customerCouponMessage(
                           c.name,
