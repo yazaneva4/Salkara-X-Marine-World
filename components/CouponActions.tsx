@@ -6,6 +6,7 @@ import WhatsAppButton from "./WhatsAppButton";
 import SendToButton from "./SendToButton";
 import { CheckIcon } from "./Icons";
 import type { CouponStatus, Role } from "@/lib/types";
+import type { Channel } from "@/lib/messaging";
 import {
   contactMarineMessage,
   contactSalkaraMessage,
@@ -25,6 +26,7 @@ interface Props {
   couponUrl: string;
   customerWhatsapp?: string; // only provided to signed-in staff
   customerEmail?: string; // Google Chat address, staff only
+  customerChannel?: Channel; // app chosen when the coupon was issued
 }
 
 const SALKARA_WA = process.env.NEXT_PUBLIC_SALKARA_WHATSAPP || "";
@@ -49,6 +51,7 @@ export default function CouponActions({
   couponUrl,
   customerWhatsapp,
   customerEmail,
+  customerChannel,
 }: Props) {
   const [status, setStatus] = useState<CouponStatus>(initialStatus);
   const [marineAt, setMarineAt] = useState<string | null>(marineUsedAt);
@@ -186,7 +189,7 @@ export default function CouponActions({
               {customerWhatsapp !== undefined && (
                 <SendToButton
                   number={customerWhatsapp}
-              defaultChannel={customerEmail && !customerWhatsapp ? "google-chat" : undefined}
+              defaultChannel={customerChannel ?? (customerEmail && !customerWhatsapp ? "google-chat" : undefined)}
               defaultEmail={customerEmail}
                   message={completedMessage(name, code)}
                   label="Send thank-you to customer"
@@ -203,7 +206,7 @@ export default function CouponActions({
         <div className="flex flex-wrap gap-2">
           <SendToButton
             number={customerWhatsapp}
-              defaultChannel={customerEmail && !customerWhatsapp ? "google-chat" : undefined}
+              defaultChannel={customerChannel ?? (customerEmail && !customerWhatsapp ? "google-chat" : undefined)}
               defaultEmail={customerEmail}
             message={customerCouponMessage(name, code, couponUrl, validUntil)}
             label="Send coupon to customer"
