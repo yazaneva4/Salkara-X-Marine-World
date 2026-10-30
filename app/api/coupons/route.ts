@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { name?: string; whatsapp?: string; validUntil?: string; notes?: string; channel?: string; email?: string };
+  let body: { name?: string; whatsapp?: string; validUntil?: string; notes?: string; channel?: string; email?: string; requestId?: string };
   try {
     body = await req.json();
   } catch {
@@ -102,6 +102,7 @@ if (couponExpired(validUntil)) {
       notes: notes || undefined,
 email: email || undefined,
 channel: CHANNELS.find((c) => c.id === body.channel)?.id,
+requestId: typeof body.requestId === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(body.requestId) ? body.requestId : undefined,
     };
     try {
       coupon = await createCoupon(candidate);
