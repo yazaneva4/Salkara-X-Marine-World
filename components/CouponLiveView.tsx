@@ -8,6 +8,7 @@ import {
   type CouponLiveStatus,
 } from "@/lib/useCouponRealtime";
 import type { CouponStatus, Role } from "@/lib/types";
+import type { Channel } from "@/lib/messaging";
 
 interface Props {
   code: string;
@@ -21,6 +22,7 @@ interface Props {
   couponUrl: string;
   customerWhatsapp?: string;
   customerEmail?: string;
+  customerChannel?: Channel;
 }
 
 export default function CouponLiveView(props: Props) {
@@ -68,6 +70,7 @@ export default function CouponLiveView(props: Props) {
           couponUrl={props.couponUrl}
           customerWhatsapp={props.customerWhatsapp}
 customerEmail={props.customerEmail}
+customerChannel={props.customerChannel}
         />
       </div>
     </>
