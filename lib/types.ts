@@ -34,10 +34,12 @@ export interface Coupon {
   email?: string;
   /** The app the coupon is meant to be sent through; the send menu opens on it. */
   channel?: Channel;
+  /** Id of the form submit that issued it, so a retried request returns this coupon instead of a duplicate. */
+  requestId?: string;
 }
 
 export interface PublicCoupon
-  extends Omit<Coupon, "whatsapp" | "email" | "issuedBy" | "marineUsedBy" | "salkaraUsedBy"> {
+  extends Omit<Coupon, "whatsapp" | "email" | "requestId" | "issuedBy" | "marineUsedBy" | "salkaraUsedBy"> {
   // A trimmed coupon that is safe to expose on the public coupon page.
   whatsappMasked: string;
 }
