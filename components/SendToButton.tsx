@@ -49,10 +49,17 @@ export default function SendToButton({
   // The menu can be dragged by its header, so it never has to cover what the
   // staff member is looking at. It returns to its normal place when reopened.
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  // Open upward when there is no room below (e.g. a button near the bottom of a phone screen).
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  const [above, setAbove] = useState(false);
   const drag = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
   function startDrag(e: React.PointerEvent<HTMLDivElement>) {
     drag.current = { startX: e.clientX, startY: e.clientY, baseX: offset.x, baseY: offset.y };
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // The pointer may already be gone; dragging still works through move events.
+    }
   }
   function moveDrag(e: React.PointerEvent<HTMLDivElement>) {
     const d = drag.current;
@@ -83,12 +90,15 @@ export default function SendToButton({
   const current = CHANNELS.find((c) => c.id === channel);
 
   return (
-    <span className={`relative inline-block ${className}`}>
+    <span ref={wrapRef} className={`relative inline-block ${className}`}>
       <button
         type="button"
         aria-expanded={open}
         aria-haspopup="true"
         onClick={() => {
+          const box = wrapRef.current?.getBoundingClientRect();
+          const below = box ? window.innerHeight - box.bottom : Infinity;
+          setAbove(!!box && below < 340 && box.top > below);
           setOffset({ x: 0, y: 0 });
           setOpen((v) => !v);
         }}
@@ -103,7 +113,7 @@ export default function SendToButton({
           role="group"
           aria-label="Send to"
           style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
-          className="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-lg"
+          className={`absolute right-0 z-20 w-72 ${above ? "bottom-full mb-2" : "mt-2"} rounded-xl border border-slate-200 bg-white p-3 text-left shadow-lg`}
         >
           <div
             onPointerDown={startDrag}
