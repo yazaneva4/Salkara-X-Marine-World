@@ -84,6 +84,7 @@ export default async function CouponPage({
           role={session?.role ?? null}
           customerWhatsapp={isStaff ? coupon.whatsapp : undefined}
 customerEmail={isStaff ? coupon.email : undefined}
+customerChannel={isStaff ? coupon.channel : undefined}
         />
       </div>
     </main>
