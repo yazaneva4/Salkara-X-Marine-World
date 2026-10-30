@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import StatusBadge from "./StatusBadge";
 import SendToButton from "./SendToButton";
@@ -26,6 +26,8 @@ export default function SalkaraDashboard({
   const [deleted, setDeleted] = useState<{ code: string; name: string; whatsapp: string } | null>(null);
   const [sendVia, setSendVia] = useState<Channel>("whatsapp");
   const [sendEmail, setSendEmail] = useState("");
+  // One id per form submit, kept until the save succeeds, so a retry after a lost reply cannot create a duplicate.
+  const submitKey = useRef<string | null>(null);
   const [issuedVia, setIssuedVia] = useState<{ channel: Channel; email: string }>({ channel: "whatsapp", email: "" });
   const [query, setQuery] = useState("");
   const [rowBusy, setRowBusy] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function SalkaraDashboard({
       const res = await fetch("/api/coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, whatsapp, validUntil, notes, channel: sendVia, email: sendVia === "google-chat" ? sendEmail : "" }),
+        body: JSON.stringify({ name, whatsapp, validUntil, notes, channel: sendVia, email: sendVia === "google-chat" ? sendEmail : "", requestId: (submitKey.current ??= crypto.randomUUID()) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -71,6 +73,7 @@ export default function SalkaraDashboard({
       setCoupons((prev) => [data.coupon, ...prev.filter((c) => c.code !== data.coupon.code)]);
       setJustIssued(data.coupon);
       setIssuedVia({ channel: sendVia, email: sendEmail });
+      submitKey.current = null;
       setName("");
       setWhatsapp("");
       setNotes("");
