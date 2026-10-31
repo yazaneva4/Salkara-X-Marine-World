@@ -10,10 +10,11 @@ import { updateSnapshot } from "./storage-update";
 /**
  * Storage layer.
  *
- * Production: a single encrypted blob in Vercel Blob storage. Blob URLs are
- * public, so the coupon data (which contains customer names + WhatsApp numbers)
- * is encrypted with AES-256-GCM before upload. Reads use a cache-busting query
- * so an overwrite is immediately visible (read-after-write consistency).
+ * Production: a single encrypted blob in Vercel Blob storage. The coupon data
+ * (customer names, phone numbers, emails) is encrypted with AES-256-GCM before
+ * upload, on top of the store's own access mode. Reads go through get() with
+ * useCache:false so an overwrite is immediately visible (read-after-write
+ * consistency), and writes are conditional on the blob's ETag.
  *
  * Local dev (no BLOB_READ_WRITE_TOKEN): falls back to a gitignored .data file
  * so the app runs without any external service.
@@ -118,9 +119,10 @@ function isAccessMismatch(err: unknown): boolean {
   );
 }
 
-function isNotFound(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message.toLowerCase() : "";
-  return msg.includes("not found") || msg.includes("does not exist");
+// Only a missing blob means "no data yet". A missing or dead *store* ("does not
+// exist") must surface as an error, not as an empty coupon list.
+function isBlobNotFound(err: unknown): boolean {
+  return err instanceof Error && err.name === "BlobNotFoundError";
 }
 
 function encryptionKey(): Buffer {
@@ -185,7 +187,8 @@ async function readSnapshot(): Promise<Snapshot> {
     } catch (err) {
       lastError = err;
       if (isAccessMismatch(err)) continue; // wrong access mode — try the other
-      if (isNotFound(err)) return { coupons: [], etag: null }; // no data yet
+      if (isBlobNotFound(err)) return { coupons: [], etag: null }; // no data yet
+      if (isDeadStoreError(err)) workingToken = null; // re-probe the tokens next time
       throw err;
     }
   }
