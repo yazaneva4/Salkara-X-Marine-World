@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useId, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import {
   CHANNELS,
   googleChatLink,
@@ -41,8 +41,10 @@ export default function SendToButton({
   defaultEmail = "",
   defaultOpen = false,
 }: Props) {
+  // Phone-based apps need a real number; without one only Google Chat makes sense.
+  const hasNumber = number.replace(/\D/g, "").length >= 8;
   const [open, setOpen] = useState(defaultOpen);
-  const [channel, setChannel] = useState<Channel>(defaultChannel);
+  const [channel, setChannel] = useState<Channel>(hasNumber ? defaultChannel : "google-chat");
   const [email, setEmail] = useState(defaultEmail);
   const emailId = useId();
 
@@ -70,6 +72,23 @@ export default function SendToButton({
     drag.current = null;
   }
 
+  // Close on Escape or a click outside the menu.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const onDown = (e: PointerEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [open]);
+
   const base =
     "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors focus-visible:outline focus-visible:outline-2";
   const sizes = size === "sm" ? "px-3 py-1.5 text-sm" : "px-4 py-2.5 text-sm";
@@ -94,7 +113,7 @@ export default function SendToButton({
       <button
         type="button"
         aria-expanded={open}
-        aria-haspopup="true"
+        aria-haspopup="dialog"
         onClick={() => {
           const box = wrapRef.current?.getBoundingClientRect();
           const below = box ? window.innerHeight - box.bottom : Infinity;
@@ -110,7 +129,7 @@ export default function SendToButton({
 
       {open && (
         <div
-          role="group"
+          role="dialog"
           aria-label="Send to"
           style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
           className={`absolute right-0 z-20 w-72 ${above ? "bottom-full mb-2" : "mt-2"} rounded-xl border border-slate-200 bg-white p-3 text-left shadow-lg`}
@@ -132,8 +151,9 @@ export default function SendToButton({
                 key={c.id}
                 type="button"
                 aria-pressed={c.id === channel}
+                disabled={!hasNumber && c.id !== "google-chat"}
                 onClick={() => setChannel(c.id)}
-                className={`rounded-lg border px-2 py-1.5 text-xs font-semibold ${
+                className={`rounded-lg border px-2 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 ${
                   c.id === channel
                     ? "border-salkara bg-salkara/10 text-salkara-dark"
                     : "border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -143,7 +163,9 @@ export default function SendToButton({
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-slate-500">{current?.hint}</p>
+          <p className="mt-2 text-xs text-slate-500">
+            {!hasNumber ? "This coupon has no phone number, so only Google Chat is available" : current?.hint}
+          </p>
 
           {chat && (
             <div className="mt-2">
