@@ -56,6 +56,10 @@ const email = (typeof body.email === "string" ? body.email : "").trim().toLowerC
   if (!name) {
     return NextResponse.json({ error: "Customer name is required" }, { status: 400 });
   }
+  // The whole database is one blob, so keep each coupon small.
+  if (name.length > 100 || notes.length > 500 || email.length > 254 || body.whatsapp.length > 40) {
+    return NextResponse.json({ error: "The name, phone, email or notes is too long" }, { status: 400 });
+  }
   if (whatsapp.length < 8 && !(whatsapp.length === 0 && chatOnly)) {
     return NextResponse.json(
       { error: "A valid WhatsApp number (with country code) is required" },
