@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkCredentials } from "@/lib/config";
+import { accountsConfigured, checkCredentials } from "@/lib/config";
 import { signSession, SESSION_COOKIE } from "@/lib/auth";
 import type { Role } from "@/lib/types";
 
@@ -25,6 +25,14 @@ export async function POST(req: NextRequest) {
 
   if (role !== "salkara" && role !== "marine") {
     return NextResponse.json({ error: "Please choose a portal" }, { status: 400 });
+  }
+  // No secret or no password on this deployment means nobody may sign in,
+  // rather than falling back to the defaults that live in the repository.
+  if (!accountsConfigured) {
+    return NextResponse.json(
+      { error: "Sign-in is not configured on this deployment" },
+      { status: 503 }
+    );
   }
   if (!checkCredentials(role, username, password)) {
     return NextResponse.json(

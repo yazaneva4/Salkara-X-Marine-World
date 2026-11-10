@@ -1,13 +1,15 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { appConfig } from "./config";
+import { appConfig, sessionsAvailable } from "./config";
 import type { Role, Session } from "./types";
 
 export const SESSION_COOKIE = "salkara_session";
 
-const secretKey = new TextEncoder().encode(appConfig.sessionSecret);
+// A deployment without a real secret must not issue or trust sessions.
+const secretKey = new TextEncoder().encode(appConfig.sessionSecret || "unconfigured");
 
 export async function signSession(session: Session): Promise<string> {
+  if (!sessionsAvailable) throw new Error("SESSION_SECRET is not configured on this deployment");
   return new SignJWT({ role: session.role, username: session.username })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -16,6 +18,7 @@ export async function signSession(session: Session): Promise<string> {
 }
 
 export async function verifyToken(token: string): Promise<Session | null> {
+  if (!sessionsAvailable) return null;
   try {
     const { payload } = await jwtVerify(token, secretKey);
     const role = payload.role;
