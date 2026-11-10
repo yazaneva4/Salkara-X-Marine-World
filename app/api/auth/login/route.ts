@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { accountsConfigured, checkCredentials } from "@/lib/config";
+import { accountsConfigured, checkCredentials, configProblems } from "@/lib/config";
 import { signSession, SESSION_COOKIE } from "@/lib/auth";
 import type { Role } from "@/lib/types";
 
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
   // No secret or no password on this deployment means nobody may sign in,
   // rather than falling back to the defaults that live in the repository.
   if (!accountsConfigured) {
+    console.error("Sign-in is not configured:", configProblems.join(" "));
     return NextResponse.json(
       { error: "Sign-in is not configured on this deployment" },
       { status: 503 }
